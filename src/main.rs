@@ -44,13 +44,17 @@ fn App(cx: Scope) -> impl IntoView {
 
 
         <div
-            style = "font-size: 2em; width:100%; height:auto; word-break: break-all;"
+            style = "font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:black;"
         >
-            {move || (&text[..index()]).replace(" ", "␣")}
+            <span
+                style = "color:gray;"
+            >
+                {move || (&text[..index()]).replace(" ", "␣")}
+            </span>
             <span
                 class:red = move || !correct_input()
-                style = "font-weight:bold;"
-            >{move || if index() == text.len() {"".to_string()} else {(&text[index()..index()+1]).replace(" ", "␣")}}</span>
+            >
+            {move || if index() == text.len() {"".to_string()} else {(&text[index()..index()+1]).replace(" ", "␣")}}</span>
             {move || (&text[index()+1..]).replace(" ", "␣")}
         </div>
 
