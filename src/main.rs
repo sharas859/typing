@@ -2,6 +2,7 @@ use leptos::*;
 //import websys html element
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
+//import get_bounding_client_rect
 
 fn main() {
     mount_to_body(|cx| view! {cx, <App/>})
@@ -52,11 +53,35 @@ fn App(cx: Scope) -> impl IntoView {
                 {move || (&text[..index()]).replace(" ", "␣")}
             </span>
             <span
+                id = "current"
                 class:red = move || !correct_input()
             >
             {move || if index() == text.len() {"".to_string()} else {(&text[index()..index()+1]).replace(" ", "␣")}}</span>
             {move || (&text[index()+1..]).replace(" ", "␣")}
         </div>
+        <div
+            id = "cursor"
+            style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
+        >
+        //move cursor to current character
+        {move || {
+            let c = index();
+
+            let current = document().get_element_by_id("current");
+            if let Some(current) = current {
+                let current = current.dyn_into::<HtmlElement>().unwrap();
+                let rect = current.get_bounding_client_rect();
+                let pos_x = rect.x();
+                let pos_y = rect.y();
+                let cursor = document().get_element_by_id("cursor").unwrap().dyn_into::<HtmlElement>().unwrap();
+                cursor.set_attribute("style", &format!("position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color: black;", pos_y.to_string(),pos_x.to_string())).unwrap();
+            }}
+
+        }
+
+
+        </div>
+
 
         <dialog
             open
