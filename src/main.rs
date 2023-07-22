@@ -1,4 +1,7 @@
 use leptos::*;
+//import websys html element
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlDialogElement, HtmlElement};
 
 fn main() {
     mount_to_body(|cx| view! {cx, <App/>})
@@ -13,6 +16,8 @@ fn App(cx: Scope) -> impl IntoView {
     view! {
         cx,
         <input
+            id = "input"
+            style = "opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
             on:keydown=move |e| {
                 let key = &e.key();
                 // get rid of modifier keys
@@ -28,7 +33,12 @@ fn App(cx: Scope) -> impl IntoView {
                 else {
                     set_correct_input(false);
                 }
-           }
+            }
+
+            on:blur=move |_| {
+                let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
+                dialog.show();
+            }
         >
         </input>
 
@@ -45,7 +55,17 @@ fn App(cx: Scope) -> impl IntoView {
         </div>
 
         <dialog
-            open = move || index() == text.len()
+            open
+            id="typeDialog"
+            // move focus to input
+            on:click=move |_| {
+              //move cursor to end of input
+                let input = document().get_element_by_id("input").unwrap().dyn_into::<HtmlElement>().unwrap();
+                // hide this dialog, make sure it also closes when you click on the text
+                let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
+                dialog.close();
+                input.focus().unwrap();
+            }
         >
             <div>
                 "click to start typing"
