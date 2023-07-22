@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::{html::style, *};
 //import websys html element
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
@@ -8,11 +8,26 @@ fn main() {
     mount_to_body(|cx| view! {cx, <App/>})
 }
 
+fn get_xy(id: &str) -> (f64, f64) {
+    let current = document().get_element_by_id(id);
+    if let Some(current) = current {
+        let current = current.dyn_into::<HtmlElement>().unwrap();
+        let rect = current.get_bounding_client_rect();
+        let pos_x = rect.x();
+        let pos_y = rect.y();
+        return (pos_x, pos_y);
+    } else {
+        return (0.0, 0.0);
+    }
+}
+
 #[component]
 fn App(cx: Scope) -> impl IntoView {
     let text = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
     let (index, set_index) = create_signal(cx, 0);
     let (correct_input, set_correct_input) = create_signal(cx, true);
+    let (x, set_x) = create_signal(cx, 0.0);
+    let (y, set_y) = create_signal(cx, 0.0);
 
     view! {
         cx,
@@ -55,31 +70,32 @@ fn App(cx: Scope) -> impl IntoView {
             <span
                 id = "current"
                 class:red = move || !correct_input()
+                //call get_xy on mount
+
             >
-            {move || if index() == text.len() {"".to_string()} else {(&text[index()..index()+1]).replace(" ", "␣")}}</span>
-            {move || (&text[index()+1..]).replace(" ", "␣")}
+                {move || if index() == text.len() {"".to_string()} else {(&text[index()..index()+1]).replace(" ", "␣")}}
+            </span>
+            <span
+                id = "to_write"
+            >
+                {move || {
+                    // cursor needs to be updated here, so current is already updated
+                    let (pos_x,pos_y) = get_xy("current");
+                    set_x(pos_x);
+                    set_y(pos_y);
+                    (&text[index()+1..]).replace(" ", "␣")
+                }}
+            </span>
         </div>
         <div
             id = "cursor"
-            style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
+            //style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
+            style = move || {format!("position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color: black;", y().to_string(),x().to_string())}
+            //easy way to hide to cursor until the first key is pressed
+            style = ""
+            // figure out a way to change only the position of the cursor, probably with a class
+
         >
-        //move cursor to current character
-        {move || {
-            let c = index();
-
-            let current = document().get_element_by_id("current");
-            if let Some(current) = current {
-                let current = current.dyn_into::<HtmlElement>().unwrap();
-                let rect = current.get_bounding_client_rect();
-                let pos_x = rect.x();
-                let pos_y = rect.y();
-                let cursor = document().get_element_by_id("cursor").unwrap().dyn_into::<HtmlElement>().unwrap();
-                cursor.set_attribute("style", &format!("position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color: black;", pos_y.to_string(),pos_x.to_string())).unwrap();
-            }}
-
-        }
-
-
         </div>
 
 
@@ -92,6 +108,11 @@ fn App(cx: Scope) -> impl IntoView {
                 let input = document().get_element_by_id("input").unwrap().dyn_into::<HtmlElement>().unwrap();
                 // hide this dialog, make sure it also closes when you click on the text
                 let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
+                        {
+                let(pos_x,pos_y) = get_xy("current");
+                set_x(pos_x);
+                set_y(pos_y);
+        }
                 dialog.close();
                 input.focus().unwrap();
             }
