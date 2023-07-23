@@ -23,7 +23,7 @@ fn get_xy(id: &str) -> (f64, f64) {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 struct Counts {
     count: i32,
     missed: i32,
@@ -35,19 +35,17 @@ trait IncrCounts {
 
 impl IncrCounts for HashMap<char, Counts> {
     fn incr_counts(&mut self, c: char, missed: bool) {
-        let entry = self.entry(c).or_insert(Counts {
-            count: 0,
-            missed: 0,
-        });
-        entry.count += 1;
-        if missed {
-            entry.missed += 1;
+        if let Some(entry) = self.get_mut(&c) {
+            entry.count += 1;
+            if missed {
+                entry.missed += 1;
+            }
         }
     }
 }
 
 #[component]
-fn CharDisplay(cx: Scope, counts: ReadSignal<HashMap<char, Counts>>) -> impl IntoView {
+fn CharDisplay(cx: Scope, counts_map: ReadSignal<HashMap<char, Counts>>) -> impl IntoView {
     view! {
         cx,
         <div
@@ -56,21 +54,30 @@ fn CharDisplay(cx: Scope, counts: ReadSignal<HashMap<char, Counts>>) -> impl Int
         >
             <For
                 // should probably do this with with sometime
-                each = move || counts.get()
-                key = |(key, _)| key.clone()
-                view = move |cx, (k,v)| {
-                let values = create_memo(cx, move |_| counts.with(|map| map.get(&k).unwrap().clone()));
+                each = move || counts_map.get()
+                key = |key| *key
+                view = move |cx, (k, counts)| {
+                let values = create_memo(cx, move |_| counts_map.with(|map| map.get(&k).unwrap().clone()));
                 view! {
                     cx,
                     <div
                        style="margin: 0.5rem;"
                     >
                         {
-                            let hit_rate = 1.0 - (values().missed as f64 / values().count as f64);
-                            log!("{}: {}", k, hit_rate);
-                            log!("{:?}", v);
-                            //format!("{}: {}", k, hit_rate)
-                            format!("{}: {}", k, v.count)
+                           //let hit_rate = 1.0 - (count().missed as f64 / count().count as f64);
+                           // log!("{}: {}", k, hit_rate);
+                           // log!("{:?}", count());
+                           // //format!("{}: {}", k, hit_rate)
+
+                           //log!("{}", k);
+                           //let test2 = values.try_get().unwrap();
+                           //log!("{}", values().count.to_string());
+                           let hit_rate = 1.0 - (values().missed as f64 / values().count as f64);
+                           //test2.count.to_string()
+                           //counts.count.to_string();
+                           log!("{} total: {} miss:{}", k, values().count, values().missed);
+                           log!("{}: {}", k, hit_rate);
+                           hit_rate
                         }
                     </div>
                 }
@@ -89,7 +96,27 @@ fn App(cx: Scope) -> impl IntoView {
     let (missed, set_missed) = create_signal(cx, false);
     let (x, set_x) = create_signal(cx, 0.0);
     let (y, set_y) = create_signal(cx, 0.0);
-    let map: HashMap<char, Counts> = HashMap::new();
+    let symbols: Vec<char> = vec![
+        '`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '~', '!', '@', '#', '$',
+        '%', '^', '&', '*', '(', ')', '_', '+', '[', ']', '{', '}', '\\', '|', ';', ':', '\'', '"',
+        ',', '.', '<', '>', '/', '?', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+        'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
+        'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+        'W', 'X', 'Y', 'Z', ' ',
+    ];
+    //make every value in symbols a ref cell
+    let map: HashMap<char, Counts> = symbols
+        .iter()
+        .map(|c| {
+            (
+                *c,
+                Counts {
+                    count: 0,
+                    missed: 0,
+                },
+            )
+        })
+        .collect();
     let (counts, set_counts) = create_signal(cx, map);
 
     view! {
@@ -110,7 +137,7 @@ fn App(cx: Scope) -> impl IntoView {
 
 
                 if typed_char == expected_char {
-                    set_counts.update(|counts| counts.incr_counts(*typed_char, false));
+                    set_counts.update(|counts| counts.incr_counts(*typed_char, missed()));
                     set_missed(false);
                     set_index.update(|i| *i += 1);
 
@@ -125,8 +152,8 @@ fn App(cx: Scope) -> impl IntoView {
 
                 if index() == text().len() {
                         counts.with(|map| {
-                            for (key, value) in map.iter() {
-                                log!("{}: {}/{}", key, value.missed, value.count);
+                            for (key, val) in map.iter() {
+                                //log!("{}: {}/{}", key, val.missed, val.count);
                             }
                         });
                         set_index(0);
@@ -142,7 +169,7 @@ fn App(cx: Scope) -> impl IntoView {
         >
         </input>
 
-        <CharDisplay counts = counts/>
+        <CharDisplay counts_map = counts/>
 
 
         <div
