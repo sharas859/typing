@@ -1674,6 +1674,7 @@ name = "typing"
 version = "0.1.0"
 dependencies = [
  "leptos",
+ "linked-hash-map",
  "wasm-bindgen",
  "web-sys",
 ]
