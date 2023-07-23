@@ -23,7 +23,9 @@ fn get_xy(id: &str) -> (f64, f64) {
 
 #[component]
 fn App(cx: Scope) -> impl IntoView {
-    let text = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
+    //let text = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
+    let lesson = "hello world";
+    let (text, set_text) = create_signal(cx, lesson.to_string());
     let (index, set_index) = create_signal(cx, 0);
     let (correct_input, set_correct_input) = create_signal(cx, true);
     let (x, set_x) = create_signal(cx, 0.0);
@@ -41,13 +43,21 @@ fn App(cx: Scope) -> impl IntoView {
                   return;
                 }
                 let typed_char = &key.chars().next().unwrap();
-                let expected_char = &text.chars().nth(index()).unwrap();
+                let expected_char = &text().chars().nth(index()).unwrap();
                 if typed_char == expected_char {
                     set_correct_input(true);
                     set_index.update(|i| *i += 1);
                 }
                 else {
                     set_correct_input(false);
+                }
+
+            }
+            on: keyup = move |_| {
+
+                if index() == text().len() {
+                        set_index(0);
+                        set_text(lesson.to_string());
                 }
             }
 
@@ -65,7 +75,7 @@ fn App(cx: Scope) -> impl IntoView {
             <span
                 style = "color:gray;"
             >
-                {move || (&text[..index()]).replace(" ", "␣")}
+                {move || (&text()[..index()]).replace(" ", "␣")}
             </span>
             <span
                 id = "current"
@@ -73,7 +83,10 @@ fn App(cx: Scope) -> impl IntoView {
                 //call get_xy on mount
 
             >
-                {move || if index() == text.len() {"".to_string()} else {(&text[index()..index()+1]).replace(" ", "␣")}}
+                {move || {
+
+                    if index() == text().len() {"".to_string()} else {(&text()[index()..index()+1]).replace(" ", "␣")}
+                }}
             </span>
             <span
                 id = "to_write"
@@ -83,8 +96,17 @@ fn App(cx: Scope) -> impl IntoView {
                     let (pos_x,pos_y) = get_xy("current");
                     set_x(pos_x);
                     set_y(pos_y);
-                    (&text[index()+1..]).replace(" ", "␣")
+
+
+
+                    if index() < text().len(){
+                        (&text()[index()+1..]).replace(" ", "␣")
+                    }
+                    else {"".to_string()}
+
+
                 }}
+
             </span>
         </div>
         <div
