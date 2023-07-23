@@ -1,4 +1,4 @@
-use leptos::{html::style, *};
+use leptos::*;
 //import websys html element
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
@@ -9,10 +9,10 @@ fn main() {
 }
 
 fn get_xy(id: &str) -> (f64, f64) {
-    let current = document().get_element_by_id(id);
-    if let Some(current) = current {
-        let current = current.dyn_into::<HtmlElement>().unwrap();
-        let rect = current.get_bounding_client_rect();
+    let maybe_el = document().get_element_by_id(id);
+    if let Some(el) = maybe_el {
+        let el = el.dyn_into::<HtmlElement>().unwrap();
+        let rect = el.get_bounding_client_rect();
         let pos_x = rect.x();
         let pos_y = rect.y();
         return (pos_x, pos_y);
@@ -128,7 +128,6 @@ fn App(cx: Scope) -> impl IntoView {
             on:click=move |_| {
               //move cursor to end of input
                 let input = document().get_element_by_id("input").unwrap().dyn_into::<HtmlElement>().unwrap();
-                // hide this dialog, make sure it also closes when you click on the text
                 let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
                         {
                 let(pos_x,pos_y) = get_xy("current");
