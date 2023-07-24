@@ -24,7 +24,7 @@ fn get_xy(id: &str) -> (f64, f64) {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 struct Counts {
-    count: i32,
+    total: i32,
     missed: i32,
 }
 
@@ -35,7 +35,7 @@ trait IncrCounts {
 impl IncrCounts for LinkedHashMap<char, Counts> {
     fn incr_counts(&mut self, c: char, missed: bool) {
         if let Some(entry) = self.get_mut(&c) {
-            entry.count += 1;
+            entry.total += 1;
             if missed {
                 entry.missed += 1;
             }
@@ -55,16 +55,16 @@ fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -
                 // should probably do this with with sometime
                 each = move || counts_map.get()
                 key = |key| *key
-                view = move |cx, (k, counts)| {
-                let values = create_memo(cx, move |_| counts_map.with(|map| map.get(&k).unwrap().clone()));
-                let hit_rate = if values().count == 0 {0.0} else {1.0 - (values().missed as f32 / values().count as f32)};
+                view = move |cx, (symbol,_)| {
+                let counts = create_memo(cx, move |_| counts_map.with(|map| {map.get(&symbol).unwrap().clone()}));
+                let hit_rate = if counts().total == 0 {0.0} else {1.0 - (counts().missed as f32 / counts().total as f32)};
                 view! {
                     cx,
                     <div
                        style = move || format!("width:1rem; height=10px; border:0.1rem solid black; background-color: hsl({}, 78%, 63%);", hit_rate * 120.0)
                     >
                         {
-                           k
+                           symbol
                         }
                     </div>
                 }
@@ -98,7 +98,7 @@ fn App(cx: Scope) -> impl IntoView {
             (
                 *c,
                 Counts {
-                    count: 0,
+                    total: 0,
                     missed: 0,
                 },
             )
