@@ -49,7 +49,7 @@ fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -
         cx,
         <div
             //horizontal
-            style = "display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 100%; width: 100%;"
+            style = "display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 1rem; width: 100%;"
         >
             <For
                 // should probably do this with with sometime
@@ -61,8 +61,7 @@ fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -
                 view! {
                     cx,
                     <div
-                       //set the color of the div based on the hit rate, 0 is red, 1 is green
-                          style = move || format!("width:1rem; height=10px; border:0.1rem solid black; background-color: hsl({}, 100%, 50%);", hit_rate * 120.0)
+                       style = move || format!("width:1rem; height=10px; border:0.1rem solid black; background-color: hsl({}, 78%, 63%);", hit_rate * 120.0)
                     >
                         {
                            k
@@ -111,6 +110,10 @@ fn App(cx: Scope) -> impl IntoView {
 
 
         cx,
+    <div
+        //make this the whole screen, ignoring parent padding
+        style = "position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;"
+    >
         <input
             id = "input"
             style = "opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
@@ -161,10 +164,10 @@ fn App(cx: Scope) -> impl IntoView {
 
 
         <div
-            style = "font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:black;"
+            style = "font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#c0caf5;"
         >
             <span
-                style = "color:gray;"
+                style = "color:#444b6a;"
             >
                 {move || (&text()[..index()]).replace(" ", "␣")}
             </span>
@@ -203,21 +206,20 @@ fn App(cx: Scope) -> impl IntoView {
         <div
             id = "cursor"
             //style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
-            style = move || {format!("position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color: black;", y().to_string(),x().to_string())}
+            style = move || {format!("position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#89ddf3;", y().to_string(),x().to_string())}
             //easy way to hide to cursor until the first key is pressed
             style = ""
             // figure out a way to change only the position of the cursor, probably with a class
 
         >
         </div>
-
-
         <dialog
             open
+            style = "top: 30%"
             id="typeDialog"
             // move focus to input
             on:click=move |_| {
-              //move cursor to end of input
+            //move cursor to end of input
                 let input = document().get_element_by_id("input").unwrap().dyn_into::<HtmlElement>().unwrap();
                 let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
                         {
@@ -233,6 +235,9 @@ fn App(cx: Scope) -> impl IntoView {
                 "click to start typing"
             </div>
         </dialog>
+    </div>
+
+
 
     }
 }
