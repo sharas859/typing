@@ -56,7 +56,7 @@ fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -
                 each = move || counts_map.get()
                 key = |key| *key
                 view = move |cx, (symbol,_)| {
-                let counts = create_memo(cx, move |_| counts_map.with(|map| {map.get(&symbol).unwrap().clone()}));
+                let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
                 let hit_rate = if counts().total == 0 {0.0} else {1.0 - (counts().missed as f32 / counts().total as f32)};
                 view! {
                     cx,
@@ -142,11 +142,11 @@ fn App(cx: Scope) -> impl IntoView {
             on: keyup = move |_| {
 
                 if index() == text().len() {
-                        counts.with(|map| {
-                            for (key, val) in map.iter() {
-                                //log!("{}: {}/{}", key, val.missed, val.count);
-                            }
-                        });
+                        //counts.with(|map| {
+                        //    for (key, val) in map.iter() {
+                        //        //log!("{}: {}/{}", key, val.missed, val.count);
+                        //    }
+                        //});
                         set_index(0);
                         set_text(lesson.to_string());
 
@@ -169,7 +169,7 @@ fn App(cx: Scope) -> impl IntoView {
             <span
                 style = "color:#444b6a;"
             >
-                {move || (&text()[..index()]).replace(" ", "␣")}
+                {move || (text()[..index()]).replace(' ', "␣")}
             </span>
             <span
                 id = "current"
@@ -179,7 +179,7 @@ fn App(cx: Scope) -> impl IntoView {
             >
                 {move || {
 
-                    if index() == text().len() {"".to_string()} else {(&text()[index()..index()+1]).replace(" ", "␣")}
+                    if index() == text().len() {"".to_string()} else {(text()[index()..index()+1]).replace(' ', "␣")}
                 }}
             </span>
             <span
@@ -194,7 +194,7 @@ fn App(cx: Scope) -> impl IntoView {
 
 
                     if index() < text().len(){
-                        (&text()[index()+1..]).replace(" ", "␣")
+                        (text()[index()+1..]).replace(' ', "␣")
                     }
                     else {"".to_string()}
 
