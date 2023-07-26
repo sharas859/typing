@@ -84,8 +84,8 @@ fn App(cx: Scope) -> impl IntoView {
     //let lesson = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
     //let lesson = "hello world";
 
-    let (text, set_text) = create_signal(cx, wi.with(|wi| wi.generate_random_lesson(50)));
-    set_text(wi.with(|wi| wi.generate_random_lesson(50)));
+    let (text, set_text) = create_signal(cx, wi.with_untracked(|wi| wi.generate_random_lesson(50)));
+    set_text(wi.with_untracked(|wi| wi.generate_random_lesson(50)));
     let (index, set_index) = create_signal(cx, 0);
     let (missed, set_missed) = create_signal(cx, false);
     let (x, set_x) = create_signal(cx, 0.0);
