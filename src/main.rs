@@ -1,6 +1,8 @@
 use leptos::*;
 //import websys html element
+use instant::{Duration, Instant};
 use linked_hash_map::LinkedHashMap;
+use ringbuf::{Rb, StaticRb};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
 //import get_bounding_client_rect
@@ -90,6 +92,11 @@ fn App(cx: Scope) -> impl IntoView {
     let (missed, set_missed) = create_signal(cx, false);
     let (x, set_x) = create_signal(cx, 0.0);
     let (y, set_y) = create_signal(cx, 0.0);
+
+    let mut rb = StaticRb::<Duration, 20>::default();
+    let (rb_sig, set_rb_sig) = create_signal(cx, rb);
+    let (timer, set_timer) = create_signal(cx, Instant::now());
+
     let symbols: Vec<char> = vec![
         '`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '~', '!', '@', '#', '$',
         '%', '^', '&', '*', '(', ')', '_', '+', '[', ']', '{', '}', '\\', '|', ';', ':', '\'', '"',
@@ -143,6 +150,13 @@ fn App(cx: Scope) -> impl IntoView {
                 }
                 else {
                     set_missed(true);
+                }
+
+                if index() == 0 {
+                    set_timer(Instant::now());
+                }else{
+                    set_rb_sig.update(|rb| {rb.push_overwrite(timer().elapsed());});
+                    set_timer(Instant::now());
                 }
 
             }
@@ -214,6 +228,16 @@ fn App(cx: Scope) -> impl IntoView {
                 }}
 
             </span>
+        </div>
+        <div>
+            {move || {
+                    let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
+                    let avg_time = time.as_secs_f32()/rb_sig.with_untracked(|rb| rb.len() as f32);
+                    //let wpm = 60.0/avg_time;
+                    format!("wpm: {}", 60.0 / avg_time /5.0)
+
+                }
+            }
         </div>
         <div
             id = "cursor"

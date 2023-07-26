@@ -17,6 +17,7 @@ where
 }
 
 pub struct WordIndex {
+    // todo: change hashset to vec and only use set for reading in words
     unigrams: HashMap<String, HashSet<Arc<String>>>,
     bigrams: HashMap<String, HashSet<Arc<String>>>,
 }
