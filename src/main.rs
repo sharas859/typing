@@ -93,7 +93,7 @@ fn App(cx: Scope) -> impl IntoView {
     let (x, set_x) = create_signal(cx, 0.0);
     let (y, set_y) = create_signal(cx, 0.0);
 
-    let mut rb = StaticRb::<Duration, 20>::default();
+    let mut rb = StaticRb::<Duration, 40>::default();
     let (rb_sig, set_rb_sig) = create_signal(cx, rb);
     let (timer, set_timer) = create_signal(cx, Instant::now());
 
@@ -140,8 +140,16 @@ fn App(cx: Scope) -> impl IntoView {
                 let typed_char = &key.chars().next().unwrap();
                 let expected_char = &text().chars().nth(index()).unwrap();
 
+                if index() == 0 {
+                    set_timer(Instant::now());
+                }
 
                 if typed_char == expected_char {
+
+                    if index() != 0 {
+                        set_rb_sig.update(|rb| {rb.push_overwrite(timer().elapsed());});
+                        set_timer(Instant::now());
+                    }
                     set_counts.update(|counts| counts.incr_counts(*typed_char, missed()));
                     set_missed(false);
                     set_index.update(|i| *i += 1);
@@ -152,12 +160,6 @@ fn App(cx: Scope) -> impl IntoView {
                     set_missed(true);
                 }
 
-                if index() == 0 {
-                    set_timer(Instant::now());
-                }else{
-                    set_rb_sig.update(|rb| {rb.push_overwrite(timer().elapsed());});
-                    set_timer(Instant::now());
-                }
 
             }
 
