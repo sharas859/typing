@@ -4,7 +4,7 @@ use linked_hash_map::LinkedHashMap;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
 //import get_bounding_client_rect
-
+mod word_index;
 fn main() {
     mount_to_body(|cx| view! {cx, <App/>})
 }
@@ -76,9 +76,16 @@ fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -
 
 #[component]
 fn App(cx: Scope) -> impl IntoView {
-    let lesson = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
+    let mut word_index = word_index::WordIndex::new();
+    let word_list = include_str!("../res/pseudowords.txt");
+    word_index.read_words(word_list);
+    let (wi, set_wi) = create_signal(cx, word_index);
+
+    //let lesson = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
     //let lesson = "hello world";
-    let (text, set_text) = create_signal(cx, lesson.to_string());
+
+    let (text, set_text) = create_signal(cx, wi.with(|wi| wi.generate_random_lesson(50)));
+    set_text(wi.with(|wi| wi.generate_random_lesson(50)));
     let (index, set_index) = create_signal(cx, 0);
     let (missed, set_missed) = create_signal(cx, false);
     let (x, set_x) = create_signal(cx, 0.0);
@@ -139,6 +146,7 @@ fn App(cx: Scope) -> impl IntoView {
                 }
 
             }
+
             on: keyup = move |_| {
 
                 if index() == text().len() {
@@ -148,7 +156,9 @@ fn App(cx: Scope) -> impl IntoView {
                         //    }
                         //});
                         set_index(0);
-                        set_text(lesson.to_string());
+
+                set_text(wi.with(|wi| wi.generate_random_lesson(50)));
+
 
                 }
             }
@@ -157,6 +167,8 @@ fn App(cx: Scope) -> impl IntoView {
                 let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
                 dialog.show();
             }
+
+
         >
         </input>
 
