@@ -513,6 +513,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "gloo-storage"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d6ab60bf5dbfd6f0ed1f7843da31b41010515c745735c970e821945ca91e480"
+dependencies = [
+ "gloo-utils",
+ "js-sys",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "gloo-utils"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1739,11 +1754,13 @@ checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
 name = "typing"
 version = "0.1.0"
 dependencies = [
+ "gloo-storage",
  "instant",
  "leptos",
  "linked-hash-map",
  "rand",
  "ringbuf",
+ "serde",
  "wasm-bindgen",
  "web-sys",
 ]

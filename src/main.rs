@@ -1,8 +1,10 @@
 use leptos::*;
 //import websys html element
+use gloo_storage::{LocalStorage, Storage};
 use instant::{Duration, Instant};
 use linked_hash_map::LinkedHashMap;
 use ringbuf::{Rb, StaticRb};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
 //import get_bounding_client_rect
@@ -24,10 +26,30 @@ fn get_xy(id: &str) -> (f64, f64) {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy, Serialize, Deserialize)]
 struct Counts {
     total: i32,
     missed: i32,
+}
+
+trait Vectorize {
+    fn from_map(map: &LinkedHashMap<char, Counts>) -> Self;
+    fn into_map(self) -> LinkedHashMap<char, Counts>;
+}
+impl Vectorize for CountsVec {
+    fn from_map(map: &LinkedHashMap<char, Counts>) -> Self {
+        let data = map.iter().map(|(k, v)| (*k, *v)).collect();
+        CountsVec { data }
+    }
+    fn into_map(self) -> LinkedHashMap<char, Counts> {
+        let map: LinkedHashMap<char, Counts> = self.data.iter().map(|(k, v)| (*k, *v)).collect();
+        map
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct CountsVec {
+    data: Vec<(char, Counts)>,
 }
 
 trait IncrCounts {
@@ -106,6 +128,7 @@ fn App(cx: Scope) -> impl IntoView {
         'W', 'X', 'Y', 'Z',
     ];
     //make every value in symbols a ref cell
+
     let map: LinkedHashMap<char, Counts> = symbols
         .iter()
         .map(|c| {
@@ -118,7 +141,12 @@ fn App(cx: Scope) -> impl IntoView {
             )
         })
         .collect();
-    let (counts, set_counts) = create_signal(cx, map);
+
+    let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(&map));
+    let cm = cv.into_map();
+    // check if map and map2 are equal
+
+    let (counts, set_counts) = create_signal(cx, cm);
 
     view! {
 
@@ -171,9 +199,13 @@ fn App(cx: Scope) -> impl IntoView {
                         //        //log!("{}: {}/{}", key, val.missed, val.count);
                         //    }
                         //});
-                        set_index(0);
+                    let cv = CountsVec::from_map(&counts());
+                    LocalStorage::set("counts_vec", cv).unwrap_or_else(|_| {
+                        log!("failed to set counts_vec");
+                    });
+                    set_index(0);
 
-                set_text(wi.with(|wi| wi.generate_random_lesson(50)));
+                    set_text(wi.with(|wi| wi.generate_random_lesson(50)));
 
 
                 }
