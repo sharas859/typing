@@ -2,6 +2,7 @@ use leptos::*;
 //import websys html element
 use gloo_storage::{LocalStorage, Storage};
 use instant::{Duration, Instant};
+use leptos_use::storage::use_storage;
 use linked_hash_map::LinkedHashMap;
 use ringbuf::{Rb, StaticRb};
 use serde::{Deserialize, Serialize};
@@ -26,30 +27,45 @@ fn get_xy(id: &str) -> (f64, f64) {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 struct Counts {
-    total: i32,
-    missed: i32,
+    total: RwSignal<i32>,
+    missed: RwSignal<i32>,
 }
 
 trait Vectorize {
-    fn from_map(map: &LinkedHashMap<char, Counts>) -> Self;
-    fn into_map(self) -> LinkedHashMap<char, Counts>;
+    fn from_map(map: LinkedHashMap<char, Counts>) -> Self;
+    fn into_map(self, cx: Scope) -> LinkedHashMap<char, Counts>;
 }
 impl Vectorize for CountsVec {
-    fn from_map(map: &LinkedHashMap<char, Counts>) -> Self {
-        let data = map.iter().map(|(k, v)| (*k, *v)).collect();
+    fn from_map(map: LinkedHashMap<char, Counts>) -> Self {
+        let data = map
+            .iter()
+            .map(|(k, v)| (*k, (v.total.get_untracked(), v.total.get_untracked())))
+            .collect();
         CountsVec { data }
     }
-    fn into_map(self) -> LinkedHashMap<char, Counts> {
-        let map: LinkedHashMap<char, Counts> = self.data.iter().map(|(k, v)| (*k, *v)).collect();
+    fn into_map(self, cx: Scope) -> LinkedHashMap<char, Counts> {
+        let map: LinkedHashMap<char, Counts> = self
+            .data
+            .into_iter()
+            .map(|(k, v)| {
+                (
+                    k,
+                    Counts {
+                        total: create_rw_signal(cx, v.0),
+                        missed: create_rw_signal(cx, v.1),
+                    },
+                )
+            })
+            .collect();
         map
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct CountsVec {
-    data: Vec<(char, Counts)>,
+    data: Vec<(char, (i32, i32))>,
 }
 
 trait IncrCounts {
@@ -59,9 +75,9 @@ trait IncrCounts {
 impl IncrCounts for LinkedHashMap<char, Counts> {
     fn incr_counts(&mut self, c: char, missed: bool) {
         if let Some(entry) = self.get_mut(&c) {
-            entry.total += 1;
+            entry.total.update(|x| *x += 1);
             if missed {
-                entry.missed += 1;
+                entry.missed.update(|x| *x += 1);
             }
         }
     }
@@ -70,32 +86,43 @@ impl IncrCounts for LinkedHashMap<char, Counts> {
 #[component]
 fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -> impl IntoView {
     view! {
-        cx,
-        <div
-            //horizontal
-            style = "display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 1rem; width: 100%;"
-        >
-            <For
-                // should probably do this with with sometime
-                each = move || counts_map.get()
-                key = |key| *key
-                view = move |cx, (symbol,_)| {
-                let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
-                let hit_rate = if counts().total == 0 {0.0} else {1.0 - (counts().missed as f32 / counts().total as f32)};
-                view! {
-                    cx,
-                    <div
-                       style = move || format!("width:1rem; height=10px; border:0.1rem solid black; background-color: hsl({}, 78%, 63%);", hit_rate * 120.0)
-                    >
-                        {
-                           symbol
-                        }
-                    </div>
+            cx,
+            <div
+                //horizontal
+                style = "display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 1rem; width: 100%;"
+            >
+                <For
+                    // should probably do this with with sometime
+                    each = move || counts_map.get()
+                    key = |(key, _)| *key as i32
+                    view = move |cx, (symbol, counts)| {
+                    //let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
+
+
+
+                    view! {
+                        cx,
+                        <div
+                            style = "width:1rem; height=10px; border:0.1rem solid black;"
+                            style:background-color = move || {
+    //                            let total = counts.total.get() as f32;
+    //                            //log!("{}", total);
+    //                            let missed = counts.missed.get() as f32;
+    //                            let hit_rate = move || if counts.total.get() == 0.0 { 0.0 } else { 1.0 - missed / total};
+    //                            log!("{}", hit_rate);
+                                format!("hsl({}, 78%, 63%)",
+                                    if counts.total.get() == 0 {0.0}
+                                    else {1.0 - counts.missed.get() as f32 / counts.total.get() as f32 } * 120.0)}
+                        >
+                            {
+                               counts.total
+                            }
+                        </div>
+                    }
                 }
-            }
-            />
-        </div>
-    }
+                />
+            </div>
+        }
 }
 
 #[component]
@@ -118,7 +145,7 @@ fn App(cx: Scope) -> impl IntoView {
     let mut rb = StaticRb::<Duration, 40>::default();
     let (rb_sig, set_rb_sig) = create_signal(cx, rb);
     let (timer, set_timer) = create_signal(cx, Instant::now());
-
+    let (state, set_state, _) = use_storage(cx, "test", CountsVec::from_map(LinkedHashMap::new()));
     let symbols: Vec<char> = vec![
         '`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '~', '!', '@', '#', '$',
         '%', '^', '&', '*', '(', ')', '_', '+', '[', ']', '{', '}', '\\', '|', ';', ':', '\'', '"',
@@ -135,15 +162,15 @@ fn App(cx: Scope) -> impl IntoView {
             (
                 *c,
                 Counts {
-                    total: 0,
-                    missed: 0,
+                    total: create_rw_signal(cx, 0),
+                    missed: create_rw_signal(cx, 0),
                 },
             )
         })
         .collect();
 
-    let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(&map));
-    let cm = cv.into_map();
+    let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
+    let cm = cv.into_map(cx);
     // check if map and map2 are equal
 
     let (counts, set_counts) = create_signal(cx, cm);
@@ -167,6 +194,8 @@ fn App(cx: Scope) -> impl IntoView {
                 }
                 let typed_char = &key.chars().next().unwrap();
                 let expected_char = &text().chars().nth(index()).unwrap();
+
+                //log("{}", state());
 
                 if index() == 0 {
                     set_timer(Instant::now());
@@ -199,7 +228,7 @@ fn App(cx: Scope) -> impl IntoView {
                         //        //log!("{}: {}/{}", key, val.missed, val.count);
                         //    }
                         //});
-                    let cv = CountsVec::from_map(&counts());
+                    let cv = CountsVec::from_map(counts());
                     LocalStorage::set("counts_vec", cv).unwrap_or_else(|_| {
                         log!("failed to set counts_vec");
                     });
