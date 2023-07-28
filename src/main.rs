@@ -1,6 +1,6 @@
 use leptos::*;
 //import websys html element
-use gloo_storage::{LocalStorage, Storage};
+//use gloo_storage::{LocalStorage, Storage};
 use instant::{Duration, Instant};
 use leptos_use::storage::use_storage;
 use linked_hash_map::LinkedHashMap;
@@ -145,7 +145,7 @@ fn App(cx: Scope) -> impl IntoView {
     let mut rb = StaticRb::<Duration, 40>::default();
     let (rb_sig, set_rb_sig) = create_signal(cx, rb);
     let (timer, set_timer) = create_signal(cx, Instant::now());
-    let (state, set_state, _) = use_storage(cx, "test", CountsVec::from_map(LinkedHashMap::new()));
+
     let symbols: Vec<char> = vec![
         '`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '~', '!', '@', '#', '$',
         '%', '^', '&', '*', '(', ')', '_', '+', '[', ']', '{', '}', '\\', '|', ';', ':', '\'', '"',
@@ -169,7 +169,10 @@ fn App(cx: Scope) -> impl IntoView {
         })
         .collect();
 
-    let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
+    let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
+
+    //let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
+    let cv = state();
     let cm = cv.into_map(cx);
     // check if map and map2 are equal
 
@@ -194,6 +197,7 @@ fn App(cx: Scope) -> impl IntoView {
                 }
                 let typed_char = &key.chars().next().unwrap();
                 let expected_char = &text().chars().nth(index()).unwrap();
+
 
                 //log("{}", state());
 
@@ -229,9 +233,10 @@ fn App(cx: Scope) -> impl IntoView {
                         //    }
                         //});
                     let cv = CountsVec::from_map(counts());
-                    LocalStorage::set("counts_vec", cv).unwrap_or_else(|_| {
-                        log!("failed to set counts_vec");
-                    });
+                    set_state(cv);
+                    //LocalStorage::set("counts_vec", cv).unwrap_or_else(|_| {
+                    //    log!("failed to set counts_vec");
+                    //});
                     set_index(0);
 
                     set_text(wi.with(|wi| wi.generate_random_lesson(50)));
