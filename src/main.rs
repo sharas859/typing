@@ -41,7 +41,7 @@ impl Vectorize for CountsVec {
     fn from_map(map: LinkedHashMap<char, Counts>) -> Self {
         let data = map
             .iter()
-            .map(|(k, v)| (*k, (v.total.get_untracked(), v.total.get_untracked())))
+            .map(|(k, v)| (*k, (v.total.get_untracked(), v.missed.get_untracked())))
             .collect();
         CountsVec { data }
     }
@@ -86,43 +86,41 @@ impl IncrCounts for LinkedHashMap<char, Counts> {
 #[component]
 fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -> impl IntoView {
     view! {
-            cx,
-            <div
-                //horizontal
-                style = "display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 1rem; width: 100%;"
-            >
-                <For
-                    // should probably do this with with sometime
-                    each = move || counts_map.get()
-                    key = |(key, _)| *key as i32
-                    view = move |cx, (symbol, counts)| {
-                    //let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
+        cx,
+        <div
+            //horizontal
+            style = "display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 1rem; width: 100%;"
+        >
+            <For
+                // should probably do this with with sometime
+                each = move || counts_map.get()
+                key = |(key, _)| *key as i32
+                view = move |cx, (symbol, counts)| {
+                //let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
 
 
 
-                    view! {
-                        cx,
-                        <div
-                            style = "width:1rem; height=10px; border:0.1rem solid black;"
-                            style:background-color = move || {
-    //                            let total = counts.total.get() as f32;
-    //                            //log!("{}", total);
-    //                            let missed = counts.missed.get() as f32;
-    //                            let hit_rate = move || if counts.total.get() == 0.0 { 0.0 } else { 1.0 - missed / total};
-    //                            log!("{}", hit_rate);
-                                format!("hsl({}, 78%, 63%)",
-                                    if counts.total.get() == 0 {0.0}
-                                    else {1.0 - counts.missed.get() as f32 / counts.total.get() as f32 } * 120.0)}
-                        >
-                            {
-                               counts.total
-                            }
-                        </div>
-                    }
+                view! {
+                    cx,
+                    <div
+                        style = "width:1rem; height=10px; border:0.1rem solid black;"
+                        style:background-color = move || {
+                            let total = counts.total.get() as f32;
+                            let missed = counts.missed.get() as f32;
+                            let hit_rate = if counts.total.get() == 0 { 0.0 } else { 1.0 - missed / total};
+
+                            format!("hsl({}, 78%, 63%)",
+                                hit_rate*120.0)}
+                    >
+                        {
+                           symbol
+                        }
+                    </div>
                 }
-                />
-            </div>
-        }
+            }
+            />
+        </div>
+    }
 }
 
 #[component]
