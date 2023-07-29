@@ -15,7 +15,7 @@ use components::character_display::CharDisplay;
 //import get_bounding_client_rect
 mod word_index;
 fn main() {
-    mount_to_body(|cx| view! {cx, <App/>})
+    mount_to_body(|cx| view! { cx, <App/> })
 }
 
 #[component]
@@ -35,8 +35,9 @@ fn App(cx: Scope) -> impl IntoView {
     let (x, set_x) = create_signal(cx, 0.0);
     let (y, set_y) = create_signal(cx, 0.0);
 
-    let rb = StaticRb::<Duration, 40>::default();
-    let (rb_sig, set_rb_sig) = create_signal(cx, rb);
+    const LAST_N_CHARS: usize = 40;
+    let input_buffer = StaticRb::<Duration, LAST_N_CHARS>::default();
+    let (rb_sig, set_rb_sig) = create_signal(cx, input_buffer);
     let (timer, set_timer) = create_signal(cx, Instant::now());
 
     let symbols: Vec<char> = vec![
@@ -49,18 +50,7 @@ fn App(cx: Scope) -> impl IntoView {
     ];
     //make every value in symbols a ref cell
 
-    let map: CountsMap = symbols
-        .iter()
-        .map(|c| {
-            (
-                *c,
-                Counts {
-                    total: create_rw_signal(cx, 0),
-                    missed: create_rw_signal(cx, 0),
-                },
-            )
-        })
-        .collect();
+    let map: CountsMap = symbols.iter().map(|c| (*c, Counts::new(cx))).collect();
 
     let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
 
@@ -71,170 +61,139 @@ fn App(cx: Scope) -> impl IntoView {
 
     let (counts, set_counts) = create_signal(cx, cm);
 
-    view! {
-
-
-        cx,
-    <div
-        //make this the whole screen, ignoring parent padding
-        style = "position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;"
-    >
-        <input
-            id = "input"
-            style = "opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
-            on:keydown=move |e| {
-                let key = &e.key();
-                // get rid of modifier keys
-                if key.len() != 1 {
-                  return;
-                }
-                let typed_char = &key.chars().next().unwrap();
-                let expected_char = &text().chars().nth(index()).unwrap();
-
-
-                //log("{}", state());
-
-                if index() == 0 {
-                    set_timer(Instant::now());
-                }
-
-                if typed_char == expected_char {
-
-                    if index() != 0 {
-                        set_rb_sig.update(|rb| {rb.push_overwrite(timer().elapsed());});
+    view! { cx,
+        <div // make this the whole screen, ignoring parent padding
+        style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
+            <input
+                id="input"
+                style="opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
+                on:keydown=move |e| {
+                    let key = &e.key();
+                    if key.len() != 1 {
+                        return;
+                    }
+                    let typed_char = &key.chars().next().unwrap();
+                    let expected_char = &text().chars().nth(index()).unwrap();
+                    if index() == 0 {
                         set_timer(Instant::now());
                     }
-                    set_counts.update(|counts| counts.incr_counts(*typed_char, missed()));
-                    set_missed(false);
-                    set_index.update(|i| *i += 1);
-
-
-                }
-                else {
-                    set_missed(true);
-                }
-
-
-            }
-
-            on: keyup = move |_| {
-
-                if index() == text().len() {
-                        //counts.with(|map| {
-                        //    for (key, val) in map.iter() {
-                        //        //log!("{}: {}/{}", key, val.missed, val.count);
-                        //    }
-                        //});
-                    let cv = CountsVec::from_map(counts());
-                    set_state(cv);
-                    //LocalStorage::set("counts_vec", cv).unwrap_or_else(|_| {
-                    //    log!("failed to set counts_vec");
-                    //});
-                    set_index(0);
-
-                    set_text(wi.with(|wi| wi.generate_random_lesson(50)));
-
-
-                }
-            }
-
-            on:blur=move |_| {
-                let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
-                dialog.show();
-            }
-
-
-        >
-        </input>
-
-        <CharDisplay counts_map = counts/>
-
-
-        <div
-            style = "font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#c0caf5;"
-        >
-            <span
-                style = "color:#444b6a;"
-            >
-                {move || (text()[..index()]).replace(' ', "␣")}
-            </span>
-            <span
-                id = "current"
-                class:red = move || missed()
-                //call get_xy on mount
-
-            >
-                {move || {
-
-                    if index() == text().len() {"".to_string()} else {(text()[index()..index()+1]).replace(' ', "␣")}
-                }}
-            </span>
-            <span
-                id = "to_write"
-            >
-                {move || {
-                    // cursor needs to be updated here, so current is already updated
-                    let (pos_x,pos_y) = get_xy("current");
-                    set_x(pos_x);
-                    set_y(pos_y);
-
-
-
-                    if index() < text().len(){
-                        (text()[index()+1..]).replace(' ', "␣")
+                    if typed_char == expected_char {
+                        if index() != 0 {
+                            set_rb_sig
+                                .update(|rb| {
+                                    rb.push_overwrite(timer().elapsed());
+                                });
+                            set_timer(Instant::now());
+                        }
+                        set_counts.update(|counts| counts.incr_counts(*typed_char, missed()));
+                        set_missed(false);
+                        set_index.update(|i| *i += 1);
+                    } else {
+                        set_missed(true);
                     }
-                    else {"".to_string()}
+                }
 
+                on:keyup=move |_| {
+                    if index() == text().len() {
+                        let cv = CountsVec::from_map(counts());
+                        set_state(cv);
+                        set_index(0);
+                        set_text(wi.with(|wi| wi.generate_random_lesson(50)));
+                    }
+                }
 
+                on:blur=move |_| {
+                    let dialog = document()
+                        .get_element_by_id("typeDialog")
+                        .unwrap()
+                        .dyn_into::<HtmlDialogElement>()
+                        .unwrap();
+                    dialog.show();
+                }
+            />
+
+            <CharDisplay counts_map=counts/>
+
+            <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#c0caf5;">
+                <span style="color:#444b6a;">
+                    {move || (text()[..index()]).replace(' ', "␣")}
+                </span>
+                <span id="current" class:red=move || missed()>
+                    // call get_xy on mount
+
+                    {move || {
+                        if index() == text().len() {
+                            "".to_string()
+                        } else {
+                            (text()[index()..index() + 1]).replace(' ', "␣")
+                        }
+                    }}
+
+                </span>
+                <span id="to_write">
+                    {move || {
+                        let (pos_x, pos_y) = get_xy("current");
+                        set_x(pos_x);
+                        set_y(pos_y);
+                        if index() < text().len() {
+                            (text()[index() + 1..]).replace(' ', "␣")
+                        } else {
+                            "".to_string()
+                        }
+                    }}
+
+                </span>
+            </div>
+            <div>
+                {move || {
+                    let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
+                    let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
+                    format!("wpm: {}", 60.0 / avg_time / 5.0)
                 }}
 
-            </span>
-        </div>
-        <div>
-            {move || {
-                    let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
-                    let avg_time = time.as_secs_f32()/rb_sig.with_untracked(|rb| rb.len() as f32);
-                    //let wpm = 60.0/avg_time;
-                    format!("wpm: {}", 60.0 / avg_time /5.0)
-
-                }
-            }
-        </div>
-        <div
-            id = "cursor"
-            //style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
-            style = move || {format!("position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#89ddf3;", y().to_string(),x().to_string())}
-            //easy way to hide to cursor until the first key is pressed
-            style = ""
-            // figure out a way to change only the position of the cursor, probably with a class
-
-        >
-        </div>
-        <dialog
-            open
-            style = "top: 30%"
-            id="typeDialog"
-            // move focus to input
-            on:click=move |_| {
-            //move cursor to end of input
-                let input = document().get_element_by_id("input").unwrap().dyn_into::<HtmlElement>().unwrap();
-                let dialog = document().get_element_by_id("typeDialog").unwrap().dyn_into::<HtmlDialogElement>().unwrap();
-                        {
-                let(pos_x,pos_y) = get_xy("current");
-                set_x(pos_x);
-                set_y(pos_y);
-        }
-                dialog.close();
-                input.focus().unwrap();
-            }
-        >
-            <div>
-                "click to start typing"
             </div>
-        </dialog>
-    </div>
+            <div
+                id="cursor"
+                // style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
+                style=move || {
+                    format!(
+                        "position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#89ddf3;",
+                        y().to_string(), x().to_string()
+                    )
+                }
+                // easy way to hide to cursor until the first key is pressed
+                style=""
+            >// figure out a way to change only the position of the cursor, probably with a class
 
+            </div>
+            <dialog
+                open
+                style="top: 30%"
+                id="typeDialog"
+                // move focus to input
+                on:click=move |_| {
+                    let input = document()
+                        .get_element_by_id("input")
+                        .unwrap()
+                        .dyn_into::<HtmlElement>()
+                        .unwrap();
+                    let dialog = document()
+                        .get_element_by_id("typeDialog")
+                        .unwrap()
+                        .dyn_into::<HtmlDialogElement>()
+                        .unwrap();
+                    {
+                        let (pos_x, pos_y) = get_xy("current");
+                        set_x(pos_x);
+                        set_y(pos_y);
+                    }
+                    dialog.close();
+                    input.focus().unwrap();
+                }
+            >
 
-
+                <div>"click to start typing"</div>
+            </dialog>
+        </div>
     }
 }
