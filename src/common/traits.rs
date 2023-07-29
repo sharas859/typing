@@ -1,11 +1,13 @@
 use crate::common::structs::{Counts, CountsVec};
 use leptos::*;
 use linked_hash_map::LinkedHashMap;
+
+pub type CountsMap = LinkedHashMap<char, Counts>;
 pub trait IncrCounts {
     fn incr_counts(&mut self, c: char, missed: bool);
 }
 
-impl IncrCounts for LinkedHashMap<char, Counts> {
+impl IncrCounts for CountsMap {
     fn incr_counts(&mut self, c: char, missed: bool) {
         if let Some(entry) = self.get_mut(&c) {
             entry.total.update(|x| *x += 1);
@@ -17,19 +19,19 @@ impl IncrCounts for LinkedHashMap<char, Counts> {
 }
 
 pub trait Vectorize {
-    fn from_map(map: LinkedHashMap<char, Counts>) -> Self;
-    fn into_map(self, cx: Scope) -> LinkedHashMap<char, Counts>;
+    fn from_map(map: CountsMap) -> Self;
+    fn into_map(self, cx: Scope) -> CountsMap;
 }
 impl Vectorize for CountsVec {
-    fn from_map(map: LinkedHashMap<char, Counts>) -> Self {
+    fn from_map(map: CountsMap) -> Self {
         let data = map
             .iter()
             .map(|(k, v)| (*k, (v.total.get_untracked(), v.missed.get_untracked())))
             .collect();
         CountsVec { data }
     }
-    fn into_map(self, cx: Scope) -> LinkedHashMap<char, Counts> {
-        let map: LinkedHashMap<char, Counts> = self
+    fn into_map(self, cx: Scope) -> CountsMap {
+        let map: CountsMap = self
             .data
             .into_iter()
             .map(|(k, v)| {

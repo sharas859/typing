@@ -3,7 +3,6 @@ use leptos::*;
 //use gloo_storage::{LocalStorage, Storage};
 use instant::{Duration, Instant};
 use leptos_use::storage::use_storage;
-use linked_hash_map::LinkedHashMap;
 use ringbuf::{Rb, StaticRb};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
@@ -36,7 +35,7 @@ fn App(cx: Scope) -> impl IntoView {
     let (x, set_x) = create_signal(cx, 0.0);
     let (y, set_y) = create_signal(cx, 0.0);
 
-    let mut rb = StaticRb::<Duration, 40>::default();
+    let rb = StaticRb::<Duration, 40>::default();
     let (rb_sig, set_rb_sig) = create_signal(cx, rb);
     let (timer, set_timer) = create_signal(cx, Instant::now());
 
@@ -50,7 +49,7 @@ fn App(cx: Scope) -> impl IntoView {
     ];
     //make every value in symbols a ref cell
 
-    let map: LinkedHashMap<char, Counts> = symbols
+    let map: CountsMap = symbols
         .iter()
         .map(|c| {
             (

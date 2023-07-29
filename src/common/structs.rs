@@ -7,6 +7,11 @@ pub struct Counts {
     pub missed: RwSignal<i32>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CountsVec {
+    pub data: Vec<(char, (i32, i32))>,
+}
+
 impl Counts {
     pub fn new(cx: Scope) -> Self {
         Self {
@@ -14,9 +19,4 @@ impl Counts {
             missed: create_rw_signal(cx, 0),
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct CountsVec {
-    pub data: Vec<(char, (i32, i32))>,
 }
