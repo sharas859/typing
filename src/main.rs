@@ -8,9 +8,9 @@ use ringbuf::{Rb, StaticRb};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
 mod common;
-use common::structs::{Counts, CountsVec};
-use common::traits::{IncrCounts, Vectorize};
-use common::utils::get_xy;
+use common::structs::*;
+use common::traits::*;
+use common::utils::*;
 mod components;
 use components::character_display::CharDisplay;
 //import get_bounding_client_rect

@@ -19,9 +19,6 @@ pub fn CharDisplay(
                 key = |(key, _)| *key as i32
                 view = move |cx, (symbol, counts)| {
                 //let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
-
-
-
                 view! {
                     cx,
                     <div
