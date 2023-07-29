@@ -5,122 +5,18 @@ use instant::{Duration, Instant};
 use leptos_use::storage::use_storage;
 use linked_hash_map::LinkedHashMap;
 use ringbuf::{Rb, StaticRb};
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
+mod common;
+use common::structs::{Counts, CountsVec};
+use common::traits::{IncrCounts, Vectorize};
+use common::utils::get_xy;
+mod components;
+use components::character_display::CharDisplay;
 //import get_bounding_client_rect
 mod word_index;
 fn main() {
     mount_to_body(|cx| view! {cx, <App/>})
-}
-
-fn get_xy(id: &str) -> (f64, f64) {
-    let maybe_el = document().get_element_by_id(id);
-    if let Some(el) = maybe_el {
-        let el = el.dyn_into::<HtmlElement>().unwrap();
-        let rect = el.get_bounding_client_rect();
-        let pos_x = rect.x();
-        let pos_y = rect.y();
-        return (pos_x, pos_y);
-    } else {
-        return (0.0, 0.0);
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
-struct Counts {
-    total: RwSignal<i32>,
-    missed: RwSignal<i32>,
-}
-
-trait Vectorize {
-    fn from_map(map: LinkedHashMap<char, Counts>) -> Self;
-    fn into_map(self, cx: Scope) -> LinkedHashMap<char, Counts>;
-}
-impl Vectorize for CountsVec {
-    fn from_map(map: LinkedHashMap<char, Counts>) -> Self {
-        let data = map
-            .iter()
-            .map(|(k, v)| (*k, (v.total.get_untracked(), v.missed.get_untracked())))
-            .collect();
-        CountsVec { data }
-    }
-    fn into_map(self, cx: Scope) -> LinkedHashMap<char, Counts> {
-        let map: LinkedHashMap<char, Counts> = self
-            .data
-            .into_iter()
-            .map(|(k, v)| {
-                (
-                    k,
-                    Counts {
-                        total: create_rw_signal(cx, v.0),
-                        missed: create_rw_signal(cx, v.1),
-                    },
-                )
-            })
-            .collect();
-        map
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct CountsVec {
-    data: Vec<(char, (i32, i32))>,
-}
-
-trait IncrCounts {
-    fn incr_counts(&mut self, c: char, missed: bool);
-}
-
-impl IncrCounts for LinkedHashMap<char, Counts> {
-    fn incr_counts(&mut self, c: char, missed: bool) {
-        if let Some(entry) = self.get_mut(&c) {
-            entry.total.update(|x| *x += 1);
-            if missed {
-                entry.missed.update(|x| *x += 1);
-            }
-        }
-    }
-}
-
-#[component]
-fn CharDisplay(cx: Scope, counts_map: ReadSignal<LinkedHashMap<char, Counts>>) -> impl IntoView {
-    view! {
-        cx,
-        <div
-            //horizontal
-            style = "display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 1rem; width: 100%;"
-        >
-            <For
-                // should probably do this with with sometime
-                each = move || counts_map.get()
-                key = |(key, _)| *key as i32
-                view = move |cx, (symbol, counts)| {
-                //let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
-
-
-
-                view! {
-                    cx,
-                    <div
-                        style = "width:1rem; height=10px; border:0.1rem solid black;"
-                        style:background-color = move || {
-                            let total = counts.total.get() as f32;
-                            let missed = counts.missed.get() as f32;
-                            let hit_rate = if counts.total.get() == 0 { 0.0 } else { 1.0 - missed / total};
-
-                            format!("hsl({}, 78%, 63%)",
-                                hit_rate*120.0)}
-                    >
-                        {
-                           symbol
-                        }
-                    </div>
-                }
-            }
-            />
-        </div>
-    }
 }
 
 #[component]
