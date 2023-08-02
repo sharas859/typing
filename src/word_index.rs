@@ -5,7 +5,6 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use std::sync::Arc;
 
-use leptos::html::S;
 use rand::seq::SliceRandom;
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -146,7 +145,7 @@ impl WordIndex {
     }
 
     pub fn generate_lesson_from_n_grams(&self, length: usize, n_grams: &Vec<String>) -> String {
-        if n_grams.len() == 0 {
+        if n_grams.is_empty() {
             return self.generate_random_lesson(length);
         }
 
