@@ -23,12 +23,15 @@ fn App(cx: Scope) -> impl IntoView {
     let mut word_index = word_index::WordIndex::new();
     let word_list = include_str!("../res/pseudowords.txt");
     word_index.read_words(word_list);
-    let (wi, set_wi) = create_signal(cx, word_index);
+    let (wi, _) = create_signal(cx, word_index);
 
     //let lesson = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
     //let lesson = "hello world";
-
-    let (text, set_text) = create_signal(cx, wi.with_untracked(|wi| wi.generate_random_lesson(50)));
+    let to_train = create_rw_signal(cx, Vec::<String>::new());
+    let (text, set_text) = create_signal(
+        cx,
+        wi.with_untracked(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())),
+    );
     set_text(wi.with_untracked(|wi| wi.generate_random_lesson(50)));
     let (index, set_index) = create_signal(cx, 0);
     let (missed, set_missed) = create_signal(cx, false);
@@ -98,7 +101,7 @@ fn App(cx: Scope) -> impl IntoView {
                         let cv = CountsVec::from_map(counts());
                         set_state(cv);
                         set_index(0);
-                        set_text(wi.with(|wi| wi.generate_random_lesson(50)));
+                        set_text(wi.with(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())));
                     }
                 }
 
@@ -112,10 +115,10 @@ fn App(cx: Scope) -> impl IntoView {
                 }
             />
 
-            <CharDisplay counts_map=counts/>
+            <CharDisplay counts_map=counts to_train = to_train/>
 
-            <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#c0caf5;">
-                <span style="color:#444b6a;">
+            <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD;">
+                <span style="color:#414868;">
                     {move || (text()[..index()]).replace(' ', "␣")}
                 </span>
                 <span id="current" class:red=move || missed()>
@@ -148,7 +151,10 @@ fn App(cx: Scope) -> impl IntoView {
                 {move || {
                     let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
                     let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
-                    format!("wpm: {}", 60.0 / avg_time / 5.0)
+                    const MINUTE: f32 = 60.0;
+                    const LETTERS_PER_WORD: f32 = 4.5;
+
+                    format!("wpm: {}", MINUTE / avg_time / LETTERS_PER_WORD)
                 }}
 
             </div>
@@ -157,7 +163,7 @@ fn App(cx: Scope) -> impl IntoView {
                 // style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
                 style=move || {
                     format!(
-                        "position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#89ddf3;",
+                        "position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff;",
                         y().to_string(), x().to_string()
                     )
                 }

@@ -9,8 +9,8 @@ pub fn get_xy(id: &str) -> (f64, f64) {
         let rect = el.get_bounding_client_rect();
         let pos_x = rect.x();
         let pos_y = rect.y();
-        return (pos_x, pos_y);
+        (pos_x, pos_y)
     } else {
-        return (0.0, 0.0);
+        (0.0, 0.0)
     }
 }

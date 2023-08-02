@@ -144,4 +144,38 @@ impl WordIndex {
             .join(" ");
         lesson_string
     }
+
+    pub fn generate_lesson_from_n_grams(&self, length: usize, n_grams: &Vec<String>) -> String {
+        if n_grams.len() == 0 {
+            return self.generate_random_lesson(length);
+        }
+
+        let mut lesson = Vec::new();
+        let mut lesson_len = 0;
+        let mut rng = rand::thread_rng();
+
+        while lesson_len < length {
+            let n_gram = n_grams.choose(&mut rng).unwrap();
+            if n_gram.len() == 1 {
+                let word = self.get_word_from_unigram(n_gram);
+                if let Some(word) = word {
+                    lesson_len += word.len();
+                    lesson.push(word);
+                }
+            } else if n_gram.len() == 2 {
+                let word = self.get_word_from_bigramm(n_gram);
+                if let Some(word) = word {
+                    lesson_len += word.len();
+                    lesson.push(word);
+                }
+            }
+        }
+
+        let lesson_string = lesson
+            .iter()
+            .map(|s| s.as_str())
+            .collect::<Vec<&str>>()
+            .join(" ");
+        lesson_string
+    }
 }
