@@ -16,4 +16,4 @@ ringbuf = "0.3.3"
 instant = { version = "0.1.12", features = [ "wasm-bindgen", "inaccurate" ] }
 gloo-storage = "0.2.2"
 serde = { version = "1.0.130", features = ["derive"] }
-leptos-use = {version = "0.6.0", features = ["storage",]}
+leptos-use = {version = "0.6.1", features = ["storage",]}

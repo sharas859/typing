@@ -820,9 +820,9 @@ dependencies = [
 
 [[package]]
 name = "leptos-use"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8ba43b3131f5dc6a69de57f5f7bf4f488a7e691ead586685bb797c95701677f"
+checksum = "bf67b821645f70045860fa9198fcd4a42273660122680c12f1c4f19aac879ebe"
 dependencies = [
  "cfg-if",
  "default-struct-builder",
