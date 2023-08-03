@@ -51,7 +51,18 @@ fn App(cx: Scope) -> impl IntoView {
         "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
         "V", "W", "X", "Y", "Z",
     ];
+
+    let bigrams = symbols
+        .iter()
+        .flat_map(|c1| symbols.iter().map(move |c2| format!("{}{}", c1, c2)))
+        .collect::<Vec<String>>();
     //make every value in symbols a ref cell
+    // combine symbols and bigrams
+
+    let bigram_map: CountsMap = bigrams
+        .iter()
+        .map(|bigram| (bigram.clone(), Counts::new(cx)))
+        .collect();
 
     let map: CountsMap = symbols
         .iter()
@@ -59,12 +70,17 @@ fn App(cx: Scope) -> impl IntoView {
         .collect();
 
     let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
+    let (bigram_state, set_bigram_state, _) =
+        use_storage(cx, "bigram_counts", CountsVec::from_map(bigram_map));
 
     //let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
     let cm = state.get_untracked().into_map(cx);
+    let bm = bigram_state.get_untracked().into_map(cx);
     // check if map and map2 are equal
 
     let (counts, set_counts) = create_signal(cx, cm);
+    let (bigram_counts, set_bigram_counts) = create_signal(cx, bm);
+    let mut last_char = "".to_string();
 
     view! { cx,
         <div // make this the whole screen, ignoring parent padding
@@ -91,11 +107,22 @@ fn App(cx: Scope) -> impl IntoView {
                             set_timer(Instant::now());
                         }
                         set_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
+
+                        if !last_char.is_empty() {
+                            let bigram = format!("{}{}", last_char, typed_char);
+                            set_bigram_counts.update(|counts| counts.incr_counts(bigram, missed()));
+                        }
+                        last_char = typed_char.to_string();
+
                         set_missed(false);
                         set_index.update(|i| *i += 1);
+
+
+
                     } else {
                         set_missed(true);
                     }
+
                 }
 
                 on:keyup=move |_| {
@@ -118,6 +145,7 @@ fn App(cx: Scope) -> impl IntoView {
             />
 
             <CharDisplay counts_map=counts to_train = to_train/>
+            <CharDisplay counts_map=bigram_counts to_train = to_train />
 
             <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD;">
                 <span style="color:#414868;">
