@@ -5,7 +5,7 @@ use linked_hash_map::LinkedHashMap;
 #[component]
 pub fn CharDisplay(
     cx: Scope,
-    counts_map: ReadSignal<LinkedHashMap<char, Counts>>,
+    counts_map: ReadSignal<LinkedHashMap<String, Counts>>,
     to_train: RwSignal<Vec<String>>,
 ) -> impl IntoView {
     view! { cx,
@@ -14,9 +14,10 @@ pub fn CharDisplay(
             <For
                 // should probably do this with with sometime
                 each=move || counts_map.get()
-                key=|(key, _)| *key as i32
+                key=|(key, _)| key.clone()
                 view=move |cx, (symbol, counts)| {
                     let (clicked, set_clicked) = create_signal(cx, false);
+                    let sym = symbol.clone();
                     // let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
                     view! { cx,
                         <div
@@ -56,7 +57,7 @@ pub fn CharDisplay(
                             }
                         >
 
-                            {symbol}
+                            {sym}
 
                         </div>
                     }

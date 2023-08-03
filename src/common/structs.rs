@@ -9,7 +9,7 @@ pub struct Counts {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CountsVec {
-    pub data: Vec<(char, (i32, i32))>,
+    pub data: Vec<(String, (i32, i32))>,
 }
 
 impl Counts {

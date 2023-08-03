@@ -2,14 +2,14 @@ use crate::common::structs::{Counts, CountsVec};
 use leptos::*;
 use linked_hash_map::LinkedHashMap;
 
-pub type CountsMap = LinkedHashMap<char, Counts>;
+pub type CountsMap = LinkedHashMap<String, Counts>;
 pub trait IncrCounts {
-    fn incr_counts(&mut self, c: char, missed: bool);
+    fn incr_counts(&mut self, key: String, missed: bool);
 }
 
 impl IncrCounts for CountsMap {
-    fn incr_counts(&mut self, c: char, missed: bool) {
-        if let Some(entry) = self.get_mut(&c) {
+    fn incr_counts(&mut self, key: String, missed: bool) {
+        if let Some(entry) = self.get_mut(&key) {
             entry.total.update(|x| *x += 1);
             if missed {
                 entry.missed.update(|x| *x += 1);
@@ -26,7 +26,12 @@ impl Vectorize for CountsVec {
     fn from_map(map: CountsMap) -> Self {
         let data = map
             .iter()
-            .map(|(k, v)| (*k, (v.total.get_untracked(), v.missed.get_untracked())))
+            .map(|(k, v)| {
+                (
+                    k.clone(),
+                    (v.total.get_untracked(), v.missed.get_untracked()),
+                )
+            })
             .collect();
         CountsVec { data }
     }

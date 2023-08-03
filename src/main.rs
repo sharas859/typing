@@ -43,23 +43,25 @@ fn App(cx: Scope) -> impl IntoView {
     let (rb_sig, set_rb_sig) = create_signal(cx, input_buffer);
     let (timer, set_timer) = create_signal(cx, Instant::now());
 
-    let symbols: Vec<char> = vec![
-        '`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '~', '!', '@', '#', '$',
-        '%', '^', '&', '*', '(', ')', '_', '+', '[', ']', '{', '}', '\\', '|', ';', ':', '\'', '"',
-        ',', '.', '<', '>', '/', '?', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-        'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
-        'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
-        'W', 'X', 'Y', 'Z',
+    let symbols: Vec<&str> = vec![
+        "`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "~", "!", "@", "#", "$",
+        "%", "^", "&", "*", "(", ")", "_", "+", "[", "]", "{", "}", "\\", "|", ";", ":", "\'",
+        "\"", ",", ".", "<", ">", "/", "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
+        "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C",
+        "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
+        "V", "W", "X", "Y", "Z",
     ];
     //make every value in symbols a ref cell
 
-    let map: CountsMap = symbols.iter().map(|c| (*c, Counts::new(cx))).collect();
+    let map: CountsMap = symbols
+        .iter()
+        .map(|c| (c.to_string(), Counts::new(cx)))
+        .collect();
 
     let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
 
     //let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
-    let cv = state();
-    let cm = cv.into_map(cx);
+    let cm = state.get_untracked().into_map(cx);
     // check if map and map2 are equal
 
     let (counts, set_counts) = create_signal(cx, cm);
@@ -88,7 +90,7 @@ fn App(cx: Scope) -> impl IntoView {
                                 });
                             set_timer(Instant::now());
                         }
-                        set_counts.update(|counts| counts.incr_counts(*typed_char, missed()));
+                        set_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
                         set_missed(false);
                         set_index.update(|i| *i += 1);
                     } else {
