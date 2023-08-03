@@ -123,7 +123,7 @@ fn App(cx: Scope) -> impl IntoView {
                 <span style="color:#414868;">
                     {move || (text()[..index()]).replace(' ', "␣")}
                 </span>
-                <span id="current" class:red=move || missed()>
+                <span id="current" class:red=missed>
                     // call get_xy on mount
 
                     {move || {
