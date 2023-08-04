@@ -149,6 +149,20 @@ impl WordIndex {
             return self.generate_random_lesson(length);
         }
 
+        //check if all n_gram entries are empty
+        let mut all_empty = true;
+        for n_gram in n_grams {
+            if (n_gram.len() == 1 && self.get_unigrams(n_gram).is_some())
+                || (n_gram.len() == 2 && self.get_bigrams(n_gram).is_some())
+            {
+                all_empty = false;
+                break;
+            }
+        }
+        if all_empty {
+            return self.generate_random_lesson(length);
+        }
+
         let mut lesson = Vec::new();
         let mut lesson_len = 0;
         let mut rng = rand::thread_rng();
