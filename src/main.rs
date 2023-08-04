@@ -52,12 +52,33 @@ fn App(cx: Scope) -> impl IntoView {
         "V", "W", "X", "Y", "Z",
     ];
 
-    let bigrams = symbols
-        .iter()
-        .flat_map(|c1| symbols.iter().map(move |c2| format!("{}{}", c1, c2)))
-        .collect::<Vec<String>>();
+    let letters: Vec<&str> = vec![
+        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+        "s", "t", "u", "v", "w", "x", "y", "z",
+    ];
+
+    let capitals: Vec<&str> = vec![
+        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",
+        "S", "T", "U", "V", "W", "X", "Y", "Z",
+    ];
+
+    let numbers: Vec<&str> = vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+
+    let symbols: Vec<&str> = vec![
+        "`", "~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+", "[", "]", "{", "}",
+        "\\", "|", ";", ":", "\'", "\"", ",", ".", "<", ">", "/", "?",
+    ];
+
+    //    let bigrams = symbols
+    //        .iter()
+    //        .flat_map(|&c1| symbols.iter().map(move |&c2| format!("{}{}", c1, c2)))
+    //        .collect::<Vec<String>>();
     //make every value in symbols a ref cell
     // combine symbols and bigrams
+    let bigrams = letters
+        .iter()
+        .flat_map(|&c1| letters.iter().map(move |&c2| format!("{}{}", c1, c2)))
+        .collect::<Vec<String>>();
 
     let bigram_map: CountsMap = bigrams
         .iter()
@@ -81,6 +102,8 @@ fn App(cx: Scope) -> impl IntoView {
     let (counts, set_counts) = create_signal(cx, cm);
     let (bigram_counts, set_bigram_counts) = create_signal(cx, bm);
     let mut last_char = "".to_string();
+
+    let (drawer, set_drawer) = create_signal(cx, false);
 
     view! { cx,
         <div // make this the whole screen, ignoring parent padding
@@ -145,7 +168,22 @@ fn App(cx: Scope) -> impl IntoView {
             />
 
             <CharDisplay counts_map=counts to_train = to_train/>
+            <div
+                class = "drawer"
+                class: open = drawer
+            >
+            <div
+                style: height = "1rem"
+                style: width = "100%"
+                style: background-color = "#414868"
+                on:click = move |_| {
+                    set_drawer(!drawer());
+                }
+            >
+                asdf
+            </div>
             <CharDisplay counts_map=bigram_counts to_train = to_train />
+            </div>
 
             <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD;">
                 <span style="color:#414868;">
