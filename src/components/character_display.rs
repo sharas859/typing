@@ -10,7 +10,7 @@ pub fn CharDisplay(
 ) -> impl IntoView {
     view! { cx,
         <div // horizontal
-        style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: 1rem; width: 100%;">
+        style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: auto; width: 100%;">
             <For
                 // should probably do this with with sometime
                 each=move || counts_map.get()
