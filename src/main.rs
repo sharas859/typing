@@ -85,7 +85,7 @@ fn App(cx: Scope) -> impl IntoView {
         .map(|bigram| (bigram.clone(), Counts::new(cx)))
         .collect();
 
-    let map: CountsMap = symbols
+    let map: CountsMap = letters
         .iter()
         .map(|c| (c.to_string(), Counts::new(cx)))
         .collect();
@@ -180,7 +180,7 @@ fn App(cx: Scope) -> impl IntoView {
                     set_drawer(!drawer());
                 }
             >
-                asdf
+                aa - zz
             </div>
             <CharDisplay counts_map=bigram_counts to_train = to_train />
             </div>
