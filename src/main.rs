@@ -158,6 +158,8 @@ fn App(cx: Scope) -> impl IntoView {
 
                         set_index(0);
                         set_text(wi.with(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())));
+                        let (pos_x, pos_y) = get_xy("current", false);
+                        set_x(pos_x);
                     }
                 }
 
@@ -177,7 +179,7 @@ fn App(cx: Scope) -> impl IntoView {
                 <CharDisplay counts_map=bigram_counts to_train = to_train />
             </Drawer>
 
-            <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD;">
+            <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD; text-align: center">
                 <span style="color:#414868;">
                     {move || (text()[..index()]).replace(' ', "␣")}
                 </span>
@@ -195,7 +197,7 @@ fn App(cx: Scope) -> impl IntoView {
                 </span>
                 <span id="to_write">
                     {move || {
-                        let (pos_x, pos_y) = get_xy("current");
+                        let (pos_x, pos_y) = get_xy("current", true);
                         set_x(pos_x);
                         set_y(pos_y);
                         if index() < text().len() {
@@ -249,7 +251,7 @@ fn App(cx: Scope) -> impl IntoView {
                         .dyn_into::<HtmlDialogElement>()
                         .unwrap();
                     {
-                        let (pos_x, pos_y) = get_xy("current");
+                        let (pos_x, pos_y) = get_xy("current", false);
                         set_x(pos_x);
                         set_y(pos_y);
                     }
