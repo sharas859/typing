@@ -12,6 +12,7 @@ use common::traits::*;
 use common::utils::*;
 mod components;
 use components::character_display::CharDisplay;
+use components::display_drawer::Drawer;
 //import get_bounding_client_rect
 mod word_index;
 fn main() {
@@ -43,6 +44,7 @@ fn App(cx: Scope) -> impl IntoView {
     let (rb_sig, set_rb_sig) = create_signal(cx, input_buffer);
     let (timer, set_timer) = create_signal(cx, Instant::now());
 
+    // todo make this a static struct
     let symbols: Vec<&str> = vec![
         "`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "~", "!", "@", "#", "$",
         "%", "^", "&", "*", "(", ")", "_", "+", "[", "]", "{", "}", "\\", "|", ";", ":", "\'",
@@ -103,8 +105,6 @@ fn App(cx: Scope) -> impl IntoView {
     let (bigram_counts, set_bigram_counts) = create_signal(cx, bm);
     let mut last_char = "".to_string();
 
-    let (drawer, set_drawer) = create_signal(cx, false);
-
     view! { cx,
         <div // make this the whole screen, ignoring parent padding
         style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
@@ -152,6 +152,10 @@ fn App(cx: Scope) -> impl IntoView {
                     if index() == text().len() {
                         let cv = CountsVec::from_map(counts());
                         set_state(cv);
+                        let bm = CountsVec::from_map(bigram_counts());
+                        set_bigram_state(bm);
+
+
                         set_index(0);
                         set_text(wi.with(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())));
                     }
@@ -168,22 +172,10 @@ fn App(cx: Scope) -> impl IntoView {
             />
 
             <CharDisplay counts_map=counts to_train = to_train/>
-            <div
-                class = "drawer"
-                class: open = drawer
-            >
-            <div
-                style: height = "1rem"
-                style: width = "100%"
-                style: background-color = "#414868"
-                on:click = move |_| {
-                    set_drawer(!drawer());
-                }
-            >
-                aa - zz
-            </div>
-            <CharDisplay counts_map=bigram_counts to_train = to_train />
-            </div>
+
+            <Drawer title = "aa - zz".to_string()>
+                <CharDisplay counts_map=bigram_counts to_train = to_train />
+            </Drawer>
 
             <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD;">
                 <span style="color:#414868;">
