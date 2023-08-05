@@ -43,6 +43,7 @@ fn App(cx: Scope) -> impl IntoView {
     let input_buffer = StaticRb::<Duration, LAST_N_CHARS>::default();
     let (rb_sig, set_rb_sig) = create_signal(cx, input_buffer);
     let (timer, set_timer) = create_signal(cx, Instant::now());
+    let (is_typing, set_is_typing) = create_signal(cx, false);
 
     // todo make this a static struct
     let symbols: Vec<&str> = vec![
@@ -158,7 +159,7 @@ fn App(cx: Scope) -> impl IntoView {
 
                         set_index(0);
                         set_text(wi.with(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())));
-                        let (pos_x, pos_y) = get_xy("current", false);
+                        let (pos_x, _) = get_xy("current", false);
                         set_x(pos_x);
                     }
                 }
@@ -169,6 +170,7 @@ fn App(cx: Scope) -> impl IntoView {
                         .unwrap()
                         .dyn_into::<HtmlDialogElement>()
                         .unwrap();
+                    set_is_typing(false);
                     dialog.show();
                 }
             />
@@ -224,13 +226,16 @@ fn App(cx: Scope) -> impl IntoView {
                 id="cursor"
                 // style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
                 style=move || {
+                    if !is_typing() {
+                        return "display: none;".to_string();
+                    }
                     format!(
-                        "position: absolute; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff;",
+                        "position: absolute ; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff;",
                         y().to_string(), x().to_string()
                     )
                 }
                 // easy way to hide to cursor until the first key is pressed
-                style=""
+
             >// figure out a way to change only the position of the cursor, probably with a class
 
             </div>
@@ -256,6 +261,7 @@ fn App(cx: Scope) -> impl IntoView {
                         set_y(pos_y);
                     }
                     dialog.close();
+                    set_is_typing(true);
                     input.focus().unwrap();
                 }
             >
