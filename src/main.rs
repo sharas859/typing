@@ -262,6 +262,15 @@ fn App(cx: Scope) -> impl IntoView {
                     }
                     dialog.close();
                     set_is_typing(true);
+                    if index() != 0 {
+                        // todo: make this into a reset function
+                        set_text(wi.with(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())));
+                        set_index(0);
+                        set_x(get_xy("current", false).0);
+                        set_timer(Instant::now());
+                        //contemplate on clearing rb
+
+                    }
                     input.focus().unwrap();
                 }
             >
