@@ -90,7 +90,7 @@ fn App(cx: Scope) -> impl IntoView {
 
     let map: CountsMap = letters
         .iter()
-        .map(|c| (c.to_string(), Counts::new(cx)))
+        .map(|&c| (c.to_string(), Counts::new(cx)))
         .collect();
 
     let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
@@ -152,9 +152,9 @@ fn App(cx: Scope) -> impl IntoView {
                 on:keyup=move |_| {
                     if index() == text().len() {
                         let cv = CountsVec::from_map(counts());
-                        set_state(cv);
+                        set_state.update(|map| {*map = cv});
                         let bm = CountsVec::from_map(bigram_counts());
-                        set_bigram_state(bm);
+                        set_bigram_state.update(|map| {*map = bm});
 
 
                         set_index(0);
@@ -240,7 +240,7 @@ fn App(cx: Scope) -> impl IntoView {
                         return "display: none;".to_string();
                     }
                     format!(
-                        "position: absolute ; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff;",
+                        "position: absolute ; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff; transition: left 0.1s ease-in-out;",
                         y().to_string(), x().to_string()
                     )
                 }
