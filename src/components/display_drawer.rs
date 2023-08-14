@@ -19,7 +19,9 @@ where
                     style: list-style = "none"
                     style: text-align = "center"
 
-                >{render_prop()}</summary>
+                >
+                {render_prop()}
+                </summary>
                 {children}
         </details>
     }
