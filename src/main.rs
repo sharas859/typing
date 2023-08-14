@@ -187,7 +187,7 @@ fn App(cx: Scope) -> impl IntoView {
 
             <CharDisplay counts_map=counts to_train = to_train/>
 
-            <Drawer title = "aa - zz".to_string()>
+            <Drawer render_prop = || view! {cx, "aa - zz"}>
                 <CharDisplay counts_map=bigram_counts to_train = to_train />
             </Drawer>
 

@@ -1,7 +1,11 @@
 use leptos::*;
 
 #[component]
-pub fn drawer(cx: Scope, title: String, children: Children) -> impl IntoView {
+pub fn Drawer<F, IV>(cx: Scope, render_prop: F, children: Children) -> impl IntoView
+where
+    F: Fn() -> IV,
+    IV: IntoView,
+{
     let (is_open, set_is_open) = create_signal(cx, false);
     let children = children(cx).nodes.into_iter().collect::<Vec<_>>();
     view! {
@@ -18,7 +22,7 @@ pub fn drawer(cx: Scope, title: String, children: Children) -> impl IntoView {
                     set_is_open(!is_open());
                 }
             >
-                {title}
+                {render_prop()}
             </div>
 
             {children}
