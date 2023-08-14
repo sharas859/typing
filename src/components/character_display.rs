@@ -42,7 +42,8 @@ pub fn CharDisplay(
                                     "0.1rem solid black"
                                 }
                             }
-                            on:click=move |_| {
+                            on:click=move |e| {
+                                e.stop_propagation();
                                 if clicked() {
                                     set_clicked(false);
                                     to_train.update(|vec| {

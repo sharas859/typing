@@ -10,29 +10,33 @@ where
     let (is_open, set_is_open) = create_signal(cx, false);
     view! {
         cx,
-        <details
+        <div
                 style: height = "auto"
                 style: width = "100vw"
                 style: background-color = "#414868"
                 style: overflow = "auto"
                 style: user-select = "none"
+
         >
-                <summary
+                <div
                     style: list-style = "none"
                     style: text-align = "center"
                     style: webkit-details-marker = "none"
+                    style: display = "flex"
+                    style: flex-direction = "row"
                     on: click = move |_| set_is_open(!is_open())
                 >
                     {render_prop()}
-                </summary>
+                    {move || if is_open() { "▲" } else { "▼" }}
+                </div>
 
                 <Show
                     when=is_open
-                    fallback=|_| {"collapsed"}
+                    fallback=|cx| view! {cx, <div></div>}
                 >
                     {children.to_owned()}
                 </Show>
 
-        </details>
+        </div>
     }
 }
