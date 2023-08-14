@@ -6,26 +6,21 @@ where
     F: Fn() -> IV,
     IV: IntoView,
 {
-    let (is_open, set_is_open) = create_signal(cx, false);
     let children = children(cx).nodes.into_iter().collect::<Vec<_>>();
     view! {
         cx,
-        <div
-                class = "drawer"
-                class: open = is_open
-        >
-            <div
-                style: height = "1rem"
+        <details
+                style: height = "auto"
                 style: width = "100vw"
                 style: background-color = "#414868"
-                on:click = move |_| {
-                    set_is_open(!is_open());
-                }
+                style: overflow = "auto"
             >
-                {render_prop()}
-            </div>
+                <summary
+                    style: list-style = "none"
+                    style: text-align = "center"
 
-            {children}
-        </div>
+                >{render_prop()}</summary>
+                {children}
+        </details>
     }
 }
