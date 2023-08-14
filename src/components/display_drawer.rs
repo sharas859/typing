@@ -15,6 +15,7 @@ where
                 style: width = "100vw"
                 style: background-color = "#414868"
                 style: overflow = "auto"
+                style: user-select = "none"
         >
                 <summary
                     style: list-style = "none"
