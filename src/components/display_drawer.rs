@@ -14,13 +14,13 @@ where
                 style: width = "100vw"
                 style: background-color = "#414868"
                 style: overflow = "auto"
-            >
+        >
                 <summary
                     style: list-style = "none"
                     style: text-align = "center"
-
+                    style: webkit-details-marker = "none"
                 >
-                {render_prop()}
+                    {render_prop()}
                 </summary>
                 {children}
         </details>
