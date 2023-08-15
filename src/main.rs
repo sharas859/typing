@@ -1,8 +1,8 @@
 use leptos::*;
 //import websys html element
-//use gloo_storage::{LocalStorage, Storage};
+use gloo_storage::{LocalStorage, Storage};
 use instant::{Duration, Instant};
-use leptos_use::storage::use_storage;
+//use leptos_use::storage::use_storage;
 use ringbuf::{Rb, StaticRb};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
@@ -99,16 +99,26 @@ fn App(cx: Scope) -> impl IntoView {
         .map(|&c| (c.to_string(), Counts::new(cx)))
         .collect();
 
-    let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
-    let (bigram_state, set_bigram_state, _) =
-        use_storage(cx, "bigram_counts", CountsVec::from_map(bigram_map));
-    let (symbols_state, set_symbols_state, _) =
-        use_storage(cx, "symbols_counts", CountsVec::from_map(symbols_map));
+    //    let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
+    //    let (bigram_state, set_bigram_state, _) =
+    //        use_storage(cx, "bigram_counts", CountsVec::from_map(bigram_map));
+    //    let (symbols_state, set_symbols_state, _) =
+    //        use_storage(cx, "symbols_counts", CountsVec::from_map(symbols_map));
+
+    let state = LocalStorage::get("counts").unwrap_or(CountsVec::from_map(map));
+    let bigram_state =
+        LocalStorage::get("bigram_counts").unwrap_or(CountsVec::from_map(bigram_map));
+    let symbols_state =
+        LocalStorage::get("symbols_counts").unwrap_or(CountsVec::from_map(symbols_map));
 
     //let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
-    let cm = state.get_untracked().into_map(cx);
-    let bm = bigram_state.get_untracked().into_map(cx);
-    let sm = symbols_state.get_untracked().into_map(cx);
+    //    let cm = state.get_untracked().into_map(cx);
+    //    let bm = bigram_state.get_untracked().into_map(cx);
+    //    let sm = symbols_state.get_untracked().into_map(cx);
+    let cm = state.into_map(cx);
+    let bm = bigram_state.into_map(cx);
+    let sm = symbols_state.into_map(cx);
+
     // check if map and map2 are equal
 
     let (counts, set_counts) = create_signal(cx, cm);
@@ -164,11 +174,15 @@ fn App(cx: Scope) -> impl IntoView {
                 on:keyup=move |_| {
                     if index() == text().len() {
                         let cv = CountsVec::from_map(counts());
-                        set_state.update(|map| {*map = cv});
+                        //set_state(cv);
+                        LocalStorage::set("counts", cv);
                         let bv = CountsVec::from_map(bigram_counts());
-                        set_bigram_state.update(|map| {*map = bv});
+                        LocalStorage::set("bigram_counts", bv);
+                        //set_bigram_state.set_untracked(bv);
                         let sv = CountsVec::from_map(symbols_counts());
-                        set_symbols_state.update(|map| {*map = sv});
+                        LocalStorage::set("symbols_counts", sv);
+                        //set_symbols_state(sv);
+                        log!("wrote to storage");
 
 
                         set_index(0);
