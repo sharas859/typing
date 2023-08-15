@@ -29,11 +29,12 @@ fn App(cx: Scope) -> impl IntoView {
     //let lesson = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
     //let lesson = "hello world";
     let to_train = create_rw_signal(cx, Vec::<String>::new());
+    let symbols_to_train = create_rw_signal(cx, Vec::<String>::new());
     let (text, set_text) = create_signal(
         cx,
         wi.with_untracked(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())),
     );
-    set_text(wi.with_untracked(|wi| wi.generate_random_lesson(50)));
+    set_text(wi.with_untracked(|wi| wi.generate_random_lesson_string(50)));
     let (index, set_index) = create_signal(cx, 0);
     let (missed, set_missed) = create_signal(cx, false);
     let (x, set_x) = create_signal(cx, 0.0);
@@ -88,6 +89,11 @@ fn App(cx: Scope) -> impl IntoView {
         .map(|bigram| (bigram.clone(), Counts::new(cx)))
         .collect();
 
+    let symbols_map: CountsMap = symbols
+        .iter()
+        .map(|&c| (c.to_string(), Counts::new(cx)))
+        .collect();
+
     let map: CountsMap = letters
         .iter()
         .map(|&c| (c.to_string(), Counts::new(cx)))
@@ -96,14 +102,18 @@ fn App(cx: Scope) -> impl IntoView {
     let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
     let (bigram_state, set_bigram_state, _) =
         use_storage(cx, "bigram_counts", CountsVec::from_map(bigram_map));
+    let (symbols_state, set_symbols_state, _) =
+        use_storage(cx, "symbols_counts", CountsVec::from_map(symbols_map));
 
     //let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
     let cm = state.get_untracked().into_map(cx);
     let bm = bigram_state.get_untracked().into_map(cx);
+    let sm = symbols_state.get_untracked().into_map(cx);
     // check if map and map2 are equal
 
     let (counts, set_counts) = create_signal(cx, cm);
     let (bigram_counts, set_bigram_counts) = create_signal(cx, bm);
+    let (symbols_counts, set_symbols_counts) = create_signal(cx, sm);
     let mut last_char = "".to_string();
 
     view! { cx,
@@ -130,7 +140,9 @@ fn App(cx: Scope) -> impl IntoView {
                                 });
                             set_timer(Instant::now());
                         }
+
                         set_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
+                        set_symbols_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
 
                         if !last_char.is_empty() {
                             let bigram = format!("{}{}", last_char, typed_char);
@@ -153,12 +165,20 @@ fn App(cx: Scope) -> impl IntoView {
                     if index() == text().len() {
                         let cv = CountsVec::from_map(counts());
                         set_state.update(|map| {*map = cv});
-                        let bm = CountsVec::from_map(bigram_counts());
-                        set_bigram_state.update(|map| {*map = bm});
+                        let bv = CountsVec::from_map(bigram_counts());
+                        set_bigram_state.update(|map| {*map = bv});
+                        let sv = CountsVec::from_map(symbols_counts());
+                        set_symbols_state.update(|map| {*map = sv});
 
 
                         set_index(0);
-                        set_text(wi.with(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())));
+                        set_text(wi.with_untracked(|wi| {
+                            wi.generate_lesson_string_from_ngrams_with_special_chars(
+                                50,
+                                &to_train.get_untracked(),
+                                &symbols_to_train.get_untracked(),
+                            )
+                        }));
                         let (pos_x, _) = get_xy("current", false);
                         set_x(pos_x);
                     }
@@ -173,7 +193,13 @@ fn App(cx: Scope) -> impl IntoView {
 
                     if index() != 0 || missed() {
                         // todo: make this into a reset function
-                        set_text(wi.with(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())));
+                        set_text(wi.with_untracked(|wi| {
+                            wi.generate_lesson_string_from_ngrams_with_special_chars(
+                                50,
+                                &to_train.get_untracked(),
+                                &symbols_to_train.get_untracked(),
+                            )
+                        }));
                         set_index(0);
                         set_x(get_xy("current", false).0);
                         set_missed(false);
@@ -192,6 +218,8 @@ fn App(cx: Scope) -> impl IntoView {
             >
                 <CharDisplay counts_map=bigram_counts to_train = to_train />
             </Drawer>
+            //<CharDisplay counts_map=symbols_counts, to_train=symbols_to_train/>
+            <CharDisplay counts_map=symbols_counts to_train = symbols_to_train/>
 
             <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD; text-align: center">
                 <span style="color:#414868;">

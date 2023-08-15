@@ -6,6 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use rand::seq::SliceRandom;
+use rand::Rng;
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
@@ -126,7 +127,7 @@ impl WordIndex {
         word
     }
 
-    pub fn generate_random_lesson(&self, length: usize) -> String {
+    pub fn generate_random_lesson(&self, length: usize) -> Vec<Arc<String>> {
         let mut lesson = Vec::new();
         let mut lesson_len = 0;
         while lesson_len < length {
@@ -136,15 +137,14 @@ impl WordIndex {
                 lesson.push(word);
             }
         }
-        let lesson_string = lesson
-            .iter()
-            .map(|s| s.as_str())
-            .collect::<Vec<&str>>()
-            .join(" ");
-        lesson_string
+        lesson
     }
 
-    pub fn generate_lesson_from_n_grams(&self, length: usize, n_grams: &Vec<String>) -> String {
+    pub fn generate_lesson_vec_from_n_grams(
+        &self,
+        length: usize,
+        n_grams: &Vec<String>,
+    ) -> Vec<Arc<String>> {
         if n_grams.is_empty() {
             return self.generate_random_lesson(length);
         }
@@ -184,11 +184,51 @@ impl WordIndex {
             }
         }
 
-        let lesson_string = lesson
+        lesson
+    }
+
+    fn generate_lesson_string(&self, lesson: Vec<Arc<String>>) -> String {
+        lesson
             .iter()
             .map(|s| s.as_str())
             .collect::<Vec<&str>>()
-            .join(" ");
-        lesson_string
+            .join(" ")
+    }
+
+    pub fn generate_random_lesson_string(&self, length: usize) -> String {
+        let lesson = self.generate_random_lesson(length);
+        self.generate_lesson_string(lesson)
+    }
+
+    pub fn generate_lesson_string_from_ngrams_with_special_chars(
+        &self,
+        length: usize,
+        n_grams: &Vec<String>,
+        special_chars: &Vec<String>,
+    ) -> String {
+        let mut rng = rand::thread_rng();
+        let lesson = self.generate_lesson_vec_from_n_grams(length, n_grams);
+        lesson
+            .iter()
+            .map(|s| {
+                if let Some(c) = special_chars.choose(&mut rng) {
+                    //should never be more than 1 char
+                    let c = c.chars().next().unwrap();
+                    // insert at random position
+                    let pos = rng.gen_range(0..s.len());
+                    let mut s = s.as_str().to_string();
+                    s.insert(pos, c);
+                    s
+                } else {
+                    s.as_str().to_string()
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(" ")
+    }
+
+    pub fn generate_lesson_from_n_grams(&self, length: usize, n_grams: &Vec<String>) -> String {
+        let lesson = self.generate_lesson_vec_from_n_grams(length, n_grams);
+        self.generate_lesson_string(lesson)
     }
 }
