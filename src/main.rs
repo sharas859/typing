@@ -126,6 +126,13 @@ fn App(cx: Scope) -> impl IntoView {
     let (symbols_counts, set_symbols_counts) = create_signal(cx, sm);
     let mut last_char = "".to_string();
 
+    let reset_lesson = move || {
+        set_index(0);
+        set_missed(false);
+        let (pos_x, pos_y) = get_xy("current", false);
+        set_x(pos_x);
+    };
+
     view! { cx,
         <div // make this the whole screen, ignoring parent padding
         style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
@@ -134,6 +141,10 @@ fn App(cx: Scope) -> impl IntoView {
                 style="opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
                 on:keydown=move |e| {
                     let key = &e.key();
+                    if key == "Escape" {
+                        reset_lesson();
+                        return;
+                    }
                     if key.len() != 1 {
                         return;
                     }
@@ -199,8 +210,9 @@ fn App(cx: Scope) -> impl IntoView {
                                 &symbols_to_train.get_untracked(),
                             )
                         }));
-                        let (pos_x, _) = get_xy("current", false);
+                        let (pos_x, pos_y) = get_xy("current", false);
                         set_x(pos_x);
+                        set_y(pos_y);
                     }
                 }
 
@@ -211,21 +223,7 @@ fn App(cx: Scope) -> impl IntoView {
                         .dyn_into::<HtmlDialogElement>()
                         .unwrap();
 
-                    if index() != 0 || missed() {
-                        // todo: make this into a reset function
-                        set_text(wi.with_untracked(|wi| {
-                            wi.generate_lesson_string_from_ngrams_with_special_chars(
-                                50,
-                                &to_train.get_untracked(),
-                                &symbols_to_train.get_untracked(),
-                            )
-                        }));
-                        set_index(0);
-                        set_x(get_xy("current", false).0);
-                        set_missed(false);
-                        set_timer(Instant::now());
-                        //contemplate on clearing rb
-                    }
+                    reset_lesson();
                     set_is_typing(false);
                     dialog.show();
                 }
