@@ -175,12 +175,18 @@ fn App(cx: Scope) -> impl IntoView {
                     if index() == text().len() {
                         let cv = CountsVec::from_map(counts());
                         //set_state(cv);
-                        LocalStorage::set("counts", cv);
+                        if LocalStorage::set("counts", cv).is_err() {
+                            log!("error writing to storage");
+                        }
                         let bv = CountsVec::from_map(bigram_counts());
-                        LocalStorage::set("bigram_counts", bv);
+                        if LocalStorage::set("bigram_counts", bv).is_err() {
+                            log!("error writing to storage");
+                        }
                         //set_bigram_state.set_untracked(bv);
                         let sv = CountsVec::from_map(symbols_counts());
-                        LocalStorage::set("symbols_counts", sv);
+                        if LocalStorage::set("symbols_counts", sv).is_err() {
+                            log!("error writing to storage");
+                        }
                         //set_symbols_state(sv);
                         log!("wrote to storage");
 
