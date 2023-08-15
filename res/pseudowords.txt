@@ -672,7 +672,6 @@ sarch
 cheaf
 persh
 rebed
-fl-er
 clart
 fanct
 maysh
@@ -747,7 +746,6 @@ nernd
 bades
 drowl
 hoaid
-co-ys
 ocrex
 wixes
 ashot
@@ -796,7 +794,6 @@ boves
 woath
 flary
 inior
-ho-ed
 stere
 bluns
 furrs
@@ -1083,7 +1080,6 @@ grimps
 fonets
 coaded
 lapple
-met-in
 rogesy
 nobbid
 oodget
@@ -1208,7 +1204,6 @@ towler
 feudge
 beisty
 tickes
-met-up
 ingeld
 tyrint
 oniter
