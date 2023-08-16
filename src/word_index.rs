@@ -56,7 +56,7 @@ impl GetRandom for HashSet<&str> {
         let mut rng = rand::thread_rng();
         let words_vec: Vec<&str> = self.iter().cloned().collect();
         if let Some(word) = words_vec.choose(&mut rng) {
-            return Some(&word);
+            return Some(word);
         }
         None
     }
