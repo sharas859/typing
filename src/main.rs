@@ -124,7 +124,7 @@ fn App(cx: Scope) -> impl IntoView {
     let (counts, set_counts) = create_signal(cx, cm);
     let (bigram_counts, set_bigram_counts) = create_signal(cx, bm);
     let (symbols_counts, set_symbols_counts) = create_signal(cx, sm);
-    let mut last_char = "".to_string();
+    let last_char = store_value(cx, "".to_string());
 
     let reset_lesson = move |generate_new_lesson: bool| {
         set_index(0);
@@ -141,6 +141,7 @@ fn App(cx: Scope) -> impl IntoView {
         let (pos_x, pos_y) = get_xy("current", false);
         set_x(pos_x);
         set_y(pos_y);
+        last_char.set_value("".to_string());
     };
 
     create_effect(cx, move |_| {
@@ -181,11 +182,11 @@ fn App(cx: Scope) -> impl IntoView {
                             set_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
                             set_symbols_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
 
-                            if !last_char.is_empty() {
-                                let bigram = format!("{}{}", last_char, typed_char);
+                            if !last_char().is_empty() {
+                                let bigram = format!("{}{}", last_char(), typed_char);
                                 set_bigram_counts.update(|counts| counts.incr_counts(bigram, missed()));
                             }
-                            last_char = typed_char.to_string();
+                            last_char.set_value(typed_char.to_string());
 
                             set_missed(false);
                             set_index.update(|i| *i += 1);
@@ -291,7 +292,7 @@ fn App(cx: Scope) -> impl IntoView {
                         let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
                         let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
                         const MINUTE: f32 = 60.0;
-                        const LETTERS_PER_WORD: f32 = 4.5;
+                        const LETTERS_PER_WORD: f32 = 5.0;
 
                         format!("wpm: {}", MINUTE / avg_time / LETTERS_PER_WORD)
                     }}
