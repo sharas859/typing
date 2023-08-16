@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::sync::Arc;
 
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -16,21 +15,21 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-pub struct WordIndex {
+pub struct WordIndex<'a> {
     // todo: change hashset to vec and only use set for reading in words
-    unigrams: HashMap<String, HashSet<Arc<String>>>,
-    bigrams: HashMap<String, HashSet<Arc<String>>>,
+    unigrams: HashMap<String, HashSet<&'a str>>,
+    bigrams: HashMap<String, HashSet<&'a str>>,
 }
 
 trait GetRandom {
-    fn get_random(&self) -> Option<Arc<String>>;
+    fn get_random(&self) -> Option<&str>;
 }
 trait GetRandomFromKey {
-    fn get_random_from_key(&self, key: &str) -> Option<Arc<String>>;
+    fn get_random_from_key(&self, key: &str) -> Option<&str>;
 }
 
-impl GetRandom for HashMap<String, HashSet<Arc<String>>> {
-    fn get_random(&self) -> Option<Arc<String>> {
+impl GetRandom for HashMap<String, HashSet<&str>> {
+    fn get_random(&self) -> Option<&str> {
         let mut rng = rand::thread_rng();
         let keys: Vec<&String> = self.keys().collect();
 
@@ -42,8 +41,8 @@ impl GetRandom for HashMap<String, HashSet<Arc<String>>> {
     }
 }
 
-impl GetRandomFromKey for HashMap<String, HashSet<Arc<String>>> {
-    fn get_random_from_key(&self, key: &str) -> Option<Arc<String>> {
+impl GetRandomFromKey for HashMap<String, HashSet<&str>> {
+    fn get_random_from_key(&self, key: &str) -> Option<&str> {
         if let Some(words) = self.get(key) {
             let word = words.get_random();
             return word;
@@ -52,72 +51,71 @@ impl GetRandomFromKey for HashMap<String, HashSet<Arc<String>>> {
     }
 }
 
-impl GetRandom for HashSet<Arc<String>> {
-    fn get_random(&self) -> Option<Arc<String>> {
+impl GetRandom for HashSet<&str> {
+    fn get_random(&self) -> Option<&str> {
         let mut rng = rand::thread_rng();
-        let words_vec: Vec<Arc<String>> = self.iter().cloned().collect();
+        let words_vec: Vec<&str> = self.iter().cloned().collect();
         if let Some(word) = words_vec.choose(&mut rng) {
-            return Some(Arc::clone(word));
+            return Some(&word);
         }
         None
     }
 }
 
-impl WordIndex {
-    pub fn new() -> WordIndex {
+impl<'a> WordIndex<'a> {
+    pub fn new() -> WordIndex<'a> {
         WordIndex {
             unigrams: HashMap::new(),
             bigrams: HashMap::new(),
         }
     }
 
-    fn add_word(&mut self, word: &str) {
-        let word = Arc::new(word.to_string());
+    fn add_word(&mut self, word: &'a str) {
         for c in word.chars() {
             let c = c.to_string();
             let unigrams = self.unigrams.entry(c).or_insert(HashSet::new());
-            unigrams.insert(word.clone());
+            unigrams.insert(word);
         }
 
         for bigram in word.chars().collect::<Vec<char>>().windows(2) {
             let bigram = bigram.iter().collect::<String>();
             let bigrams = self.bigrams.entry(bigram).or_insert(HashSet::new());
-            bigrams.insert(word.clone());
+            bigrams.insert(word);
         }
     }
 
-    pub fn read_words(&mut self, words: &str) {
+    pub fn read_words(&mut self, words: &'a str) {
         //split on newline
         for word in words.split_whitespace() {
             self.add_word(word);
         }
     }
 
-    fn get_unigrams(&self, unigram: &str) -> Option<&HashSet<Arc<String>>> {
+    fn get_unigrams(&self, unigram: &str) -> Option<&HashSet<&str>> {
         self.unigrams.get(unigram)
     }
 
-    fn get_bigrams(&self, bigram: &str) -> Option<&HashSet<Arc<String>>> {
+    fn get_bigrams(&self, bigram: &str) -> Option<&HashSet<&str>> {
         self.bigrams.get(bigram)
     }
 
-    fn get_random_unigram_word(&self) -> Option<Arc<String>> {
+    fn get_random_unigram_word(&self) -> Option<&str> {
         self.unigrams.get_random()
     }
 
-    fn get_random_bigramm_word(&self) -> Option<Arc<String>> {
+    fn get_random_bigramm_word(&self) -> Option<&str> {
         self.bigrams.get_random()
     }
 
-    fn get_word_from_bigramm(&self, bigram: &str) -> Option<Arc<String>> {
+    fn get_word_from_bigramm(&self, bigram: &str) -> Option<&str> {
         self.bigrams.get_random_from_key(bigram)
     }
 
-    fn get_word_from_unigram(&self, unigram: &str) -> Option<Arc<String>> {
+    fn get_word_from_unigram(&self, unigram: &str) -> Option<&str> {
         self.unigrams.get_random_from_key(unigram)
     }
 
-    fn get_random_word(&self) -> Option<Arc<String>> {
+    fn get_random_word(&self) -> Option<&str> {
         let mut rng = rand::thread_rng();
         //this is kinda unnecessary, since they contain the same words, but who knows
         let word = [&self.unigrams, &self.bigrams]
@@ -127,7 +125,7 @@ impl WordIndex {
         word
     }
 
-    pub fn generate_random_lesson(&self, length: usize) -> Vec<Arc<String>> {
+    pub fn generate_random_lesson(&self, length: usize) -> Vec<&str> {
         let mut lesson = Vec::new();
         let mut lesson_len = 0;
         while lesson_len < length {
@@ -144,7 +142,7 @@ impl WordIndex {
         &self,
         length: usize,
         n_grams: &Vec<String>,
-    ) -> Vec<Arc<String>> {
+    ) -> Vec<&str> {
         if n_grams.is_empty() {
             return self.generate_random_lesson(length);
         }
@@ -187,12 +185,8 @@ impl WordIndex {
         lesson
     }
 
-    fn generate_lesson_string(&self, lesson: Vec<Arc<String>>) -> String {
-        lesson
-            .iter()
-            .map(|s| s.as_str())
-            .collect::<Vec<&str>>()
-            .join(" ")
+    fn generate_lesson_string(&self, lesson: Vec<&str>) -> String {
+        lesson.join(" ")
     }
 
     pub fn generate_random_lesson_string(&self, length: usize) -> String {
@@ -210,17 +204,17 @@ impl WordIndex {
         let lesson = self.generate_lesson_vec_from_n_grams(length, n_grams);
         lesson
             .iter()
-            .map(|s| {
+            .map(|&s| {
                 if let Some(c) = special_chars.choose(&mut rng) {
                     //should never be more than 1 char
                     let c = c.chars().next().unwrap();
                     // insert at random position
                     let pos = rng.gen_range(0..s.len());
-                    let mut s = s.as_str().to_string();
-                    s.insert(pos, c);
-                    s
+                    let mut str = s.to_string();
+                    str.insert(pos, c);
+                    str
                 } else {
-                    s.as_str().to_string()
+                    s.to_string()
                 }
             })
             .collect::<Vec<String>>()
