@@ -126,207 +126,222 @@ fn App(cx: Scope) -> impl IntoView {
     let (symbols_counts, set_symbols_counts) = create_signal(cx, sm);
     let mut last_char = "".to_string();
 
-    let reset_lesson = move || {
+    let reset_lesson = move |generate_new_lesson: bool| {
         set_index(0);
+        if generate_new_lesson {
+            set_text(wi.with_untracked(|wi| {
+                wi.generate_lesson_string_from_ngrams_with_special_chars(
+                    50,
+                    &to_train.get_untracked(),
+                    &symbols_to_train.get_untracked(),
+                )
+            }));
+        }
         set_missed(false);
         let (pos_x, pos_y) = get_xy("current", false);
         set_x(pos_x);
+        set_y(pos_y);
     };
 
+    create_effect(cx, move |_| {
+        to_train();
+        symbols_to_train();
+        reset_lesson(true);
+    });
+
     view! { cx,
-        <div // make this the whole screen, ignoring parent padding
-        style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
-            <input
-                id="input"
-                style="opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
-                on:keydown=move |e| {
-                    let key = &e.key();
-                    if key == "Escape" {
-                        reset_lesson();
-                        return;
-                    }
-                    if key.len() != 1 {
-                        return;
-                    }
-                    let typed_char = &key.chars().next().unwrap();
-                    let expected_char = &text().chars().nth(index()).unwrap();
-                    if index() == 0 {
-                        set_timer(Instant::now());
-                    }
-                    if typed_char == expected_char {
-                        if index() != 0 {
-                            set_rb_sig
-                                .update(|rb| {
-                                    rb.push_overwrite(timer().elapsed());
-                                });
+            <div // make this the whole screen, ignoring parent padding
+            style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
+                <input
+                    id="input"
+                    style="opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
+                    on:keydown=move |e| {
+                        let key = &e.key();
+                        if key == "Escape" {
+                            reset_lesson(false);
+                            return;
+                        }
+                        if key.len() != 1 {
+                            return;
+                        }
+                        let typed_char = &key.chars().next().unwrap();
+                        let expected_char = &text().chars().nth(index()).unwrap();
+                        if index() == 0 {
                             set_timer(Instant::now());
                         }
+                        if typed_char == expected_char {
+                            if index() != 0 {
+                                set_rb_sig
+                                    .update(|rb| {
+                                        rb.push_overwrite(timer().elapsed());
+                                    });
+                                set_timer(Instant::now());
+                            }
 
-                        set_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
-                        set_symbols_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
+                            set_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
+                            set_symbols_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
 
-                        if !last_char.is_empty() {
-                            let bigram = format!("{}{}", last_char, typed_char);
-                            set_bigram_counts.update(|counts| counts.incr_counts(bigram, missed()));
+                            if !last_char.is_empty() {
+                                let bigram = format!("{}{}", last_char, typed_char);
+                                set_bigram_counts.update(|counts| counts.incr_counts(bigram, missed()));
+                            }
+                            last_char = typed_char.to_string();
+
+                            set_missed(false);
+                            set_index.update(|i| *i += 1);
+
+
+
+                        } else {
+                            set_missed(true);
                         }
-                        last_char = typed_char.to_string();
 
-                        set_missed(false);
-                        set_index.update(|i| *i += 1);
-
-
-
-                    } else {
-                        set_missed(true);
                     }
 
-                }
-
-                on:keyup=move |_| {
-                    if index() == text().len() {
-                        let cv = CountsVec::from_map(counts());
-                        //set_state(cv);
-                        if LocalStorage::set("counts", cv).is_err() {
-                            log!("error writing to storage");
-                        }
-                        let bv = CountsVec::from_map(bigram_counts());
-                        if LocalStorage::set("bigram_counts", bv).is_err() {
-                            log!("error writing to storage");
-                        }
-                        //set_bigram_state.set_untracked(bv);
-                        let sv = CountsVec::from_map(symbols_counts());
-                        if LocalStorage::set("symbols_counts", sv).is_err() {
-                            log!("error writing to storage");
-                        }
-                        //set_symbols_state(sv);
-                        log!("wrote to storage");
-
-
-                        set_index(0);
-                        set_text(wi.with_untracked(|wi| {
-                            wi.generate_lesson_string_from_ngrams_with_special_chars(
-                                50,
-                                &to_train.get_untracked(),
-                                &symbols_to_train.get_untracked(),
-                            )
-                        }));
-                        let (pos_x, pos_y) = get_xy("current", false);
-                        set_x(pos_x);
-                        set_y(pos_y);
-                    }
-                }
-
-                on:blur=move |_| {
-                    let dialog = document()
-                        .get_element_by_id("typeDialog")
-                        .unwrap()
-                        .dyn_into::<HtmlDialogElement>()
-                        .unwrap();
-
-                    reset_lesson();
-                    set_is_typing(false);
-                    dialog.show();
-                }
-            />
-
-            //<CharDisplay counts_map=counts to_train = to_train/>
-
-            <Drawer
-                render_prop = || view! {cx, <CharDisplay counts_map=counts to_train = to_train/>}
-            >
-                <CharDisplay counts_map=bigram_counts to_train = to_train />
-            </Drawer>
-            //<CharDisplay counts_map=symbols_counts, to_train=symbols_to_train/>
-            <CharDisplay counts_map=symbols_counts to_train = symbols_to_train/>
-
-            <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD; text-align: center">
-                <span style="color:#414868;">
-                    {move || (text()[..index()]).replace(' ', "␣")}
-                </span>
-                <span id="current" class:red=missed>
-                    // call get_xy on mount
-
-                    {move || {
+                    on:keyup=move |_| {
                         if index() == text().len() {
-                            "".to_string()
-                        } else {
-                            (text()[index()..index() + 1]).replace(' ', "␣")
-                        }
-                    }}
+                            let cv = CountsVec::from_map(counts());
+                            //set_state(cv);
+                            if LocalStorage::set("counts", cv).is_err() {
+                                log!("error writing to storage");
+                            }
+                            let bv = CountsVec::from_map(bigram_counts());
+                            if LocalStorage::set("bigram_counts", bv).is_err() {
+                                log!("error writing to storage");
+                            }
+                            //set_bigram_state.set_untracked(bv);
+                            let sv = CountsVec::from_map(symbols_counts());
+                            if LocalStorage::set("symbols_counts", sv).is_err() {
+                                log!("error writing to storage");
+                            }
+                            //set_symbols_state(sv);
+                            log!("wrote to storage");
 
-                </span>
-                <span id="to_write">
+
+                            reset_lesson(true);
+    //                        set_index(0);
+    //                        set_text(wi.with_untracked(|wi| {
+    //                            wi.generate_lesson_string_from_ngrams_with_special_chars(
+    //                                50,
+    //                                &to_train.get_untracked(),
+    //                                &symbols_to_train.get_untracked(),
+    //                            )
+    //                        }));
+    //                        let (pos_x, pos_y) = get_xy("current", false);
+    //                        set_x(pos_x);
+    //                        set_y(pos_y);
+                        }
+                    }
+
+                    on:blur=move |_| {
+                        let dialog = document()
+                            .get_element_by_id("typeDialog")
+                            .unwrap()
+                            .dyn_into::<HtmlDialogElement>()
+                            .unwrap();
+
+                        reset_lesson(false);
+                        set_is_typing(false);
+                        dialog.show();
+                    }
+                />
+
+                //<CharDisplay counts_map=counts to_train = to_train/>
+
+                <Drawer
+                    render_prop = || view! {cx, <CharDisplay counts_map=counts to_train = to_train/>}
+                >
+                    <CharDisplay counts_map=bigram_counts to_train = to_train />
+                </Drawer>
+                //<CharDisplay counts_map=symbols_counts, to_train=symbols_to_train/>
+                <CharDisplay counts_map=symbols_counts to_train = symbols_to_train/>
+
+                <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD; text-align: center">
+                    <span style="color:#414868;">
+                        {move || (text()[..index()]).replace(' ', "␣")}
+                    </span>
+                    <span id="current" class:red=missed>
+                        // call get_xy on mount
+
+                        {move || {
+                            if index() == text().len() {
+                                "".to_string()
+                            } else {
+                                (text()[index()..index() + 1]).replace(' ', "␣")
+                            }
+                        }}
+
+                    </span>
+                    <span id="to_write">
+                        {move || {
+                            let (pos_x, pos_y) = get_xy("current", true);
+                            set_x(pos_x);
+                            set_y(pos_y);
+                            if index() < text().len() {
+                                (text()[index() + 1..]).replace(' ', "␣")
+                            } else {
+                                "".to_string()
+                            }
+                        }}
+
+                    </span>
+                </div>
+                <div>
                     {move || {
-                        let (pos_x, pos_y) = get_xy("current", true);
-                        set_x(pos_x);
-                        set_y(pos_y);
-                        if index() < text().len() {
-                            (text()[index() + 1..]).replace(' ', "␣")
-                        } else {
-                            "".to_string()
-                        }
+                        let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
+                        let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
+                        const MINUTE: f32 = 60.0;
+                        const LETTERS_PER_WORD: f32 = 4.5;
+
+                        format!("wpm: {}", MINUTE / avg_time / LETTERS_PER_WORD)
                     }}
 
-                </span>
-            </div>
-            <div>
-                {move || {
-                    let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
-                    let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
-                    const MINUTE: f32 = 60.0;
-                    const LETTERS_PER_WORD: f32 = 4.5;
-
-                    format!("wpm: {}", MINUTE / avg_time / LETTERS_PER_WORD)
-                }}
-
-            </div>
-            <div
-                id="cursor"
-                // style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
-                style=move || {
-                    if !is_typing() {
-                        return "display: none;".to_string();
+                </div>
+                <div
+                    id="cursor"
+                    // style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
+                    style=move || {
+                        if !is_typing() {
+                            return "display: none;".to_string();
+                        }
+                        format!(
+                            "position: absolute ; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff; transition: left 0.1s ease-in-out;",
+                            y().to_string(), x().to_string()
+                        )
                     }
-                    format!(
-                        "position: absolute ; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff; transition: left 0.1s ease-in-out;",
-                        y().to_string(), x().to_string()
-                    )
-                }
-                // easy way to hide to cursor until the first key is pressed
+                >// figure out a way to change only the position of the cursor, probably with a class
 
-            >// figure out a way to change only the position of the cursor, probably with a class
+                </div>
+                <dialog
+                    open
+                    style="top: 30%"
+                    id="typeDialog"
+                    // move focus to input
+                    on:click=move |_| {
+                        let input = document()
+                            .get_element_by_id("input")
+                            .unwrap()
+                            .dyn_into::<HtmlElement>()
+                            .unwrap();
+                        let dialog = document()
+                            .get_element_by_id("typeDialog")
+                            .unwrap()
+                            .dyn_into::<HtmlDialogElement>()
+                            .unwrap();
+                        {
+                            let (pos_x, pos_y) = get_xy("current", false);
+                            set_x(pos_x);
+                            set_y(pos_y);
+                        }
+                        dialog.close();
+                        set_is_typing(true);
 
-            </div>
-            <dialog
-                open
-                style="top: 30%"
-                id="typeDialog"
-                // move focus to input
-                on:click=move |_| {
-                    let input = document()
-                        .get_element_by_id("input")
-                        .unwrap()
-                        .dyn_into::<HtmlElement>()
-                        .unwrap();
-                    let dialog = document()
-                        .get_element_by_id("typeDialog")
-                        .unwrap()
-                        .dyn_into::<HtmlDialogElement>()
-                        .unwrap();
-                    {
-                        let (pos_x, pos_y) = get_xy("current", false);
-                        set_x(pos_x);
-                        set_y(pos_y);
+                        input.focus().unwrap();
                     }
-                    dialog.close();
-                    set_is_typing(true);
+                >
 
-                    input.focus().unwrap();
-                }
-            >
-
-                <div>"click to start typing"</div>
-            </dialog>
-        </div>
-    }
+                    <div>"click to start typing"</div>
+                </dialog>
+            </div>
+        }
 }
