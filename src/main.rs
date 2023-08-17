@@ -178,179 +178,155 @@ fn App(cx: Scope) -> impl IntoView {
     });
 
     view! { cx,
-            <div // make this the whole screen, ignoring parent padding
-            style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
-                <input
-                    _ref = input_ref
-                    id="input"
-                    style="opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
-                    on:keydown=move |e| {
-                        let key = &e.key();
-                        if key == "Escape" {
-                            reset_lesson(RegenType::Reset);
-                            return;
-                        }
-                        if key.len() != 1 {
-                            return;
-                        }
-                        let typed_char = &key.chars().next().unwrap();
-                        let expected_char = &text().chars().nth(index()).unwrap();
-                        if index() == 0 {
+        // make this the whole screen, ignoring parent padding
+        <div style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
+            <input
+                _ref=input_ref
+                id="input"
+                style="opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
+                on:keydown=move |e| {
+                    let key = &e.key();
+                    if key == "Escape" {
+                        reset_lesson(RegenType::Reset);
+                        return;
+                    }
+                    if key.len() != 1 {
+                        return;
+                    }
+                    let typed_char = &key.chars().next().unwrap();
+                    let expected_char = &text().chars().nth(index()).unwrap();
+                    if index() == 0 {
+                        set_timer(Instant::now());
+                    }
+                    if typed_char == expected_char {
+                        if index() != 0 {
+                            set_rb_sig
+                                .update(|rb| {
+                                    rb.push_overwrite(timer().elapsed());
+                                });
                             set_timer(Instant::now());
                         }
-                        if typed_char == expected_char {
-                            if index() != 0 {
-                                set_rb_sig
-                                    .update(|rb| {
-                                        rb.push_overwrite(timer().elapsed());
-                                    });
-                                set_timer(Instant::now());
-                            }
-
-                            set_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
-                            set_symbols_counts.update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
-
-                            if !last_char().is_empty() {
-                                let bigram = format!("{}{}", last_char(), typed_char);
-                                set_bigram_counts.update(|counts| counts.incr_counts(bigram, missed()));
-                            }
-                            last_char.set_value(typed_char.to_string());
-
-                            set_missed(false);
-                            set_index.update(|i| *i += 1);
-
-
-
-                        } else {
-                            set_missed(true);
+                        set_counts
+                            .update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
+                        set_symbols_counts
+                            .update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
+                        if !last_char().is_empty() {
+                            let bigram = format!("{}{}", last_char(), typed_char);
+                            set_bigram_counts.update(|counts| counts.incr_counts(bigram, missed()));
                         }
-
+                        last_char.set_value(typed_char.to_string());
+                        set_missed(false);
+                        set_index.update(|i| *i += 1);
+                    } else {
+                        set_missed(true);
                     }
+                }
 
-                    on:keyup=move |_| {
-                        if index() == text().len() {
-                            let cv = CountsVec::from_map(counts());
-                            //set_state(cv);
-                            if LocalStorage::set("counts", cv).is_err() {
-                                log!("error writing to storage");
-                            }
-                            let bv = CountsVec::from_map(bigram_counts());
-                            if LocalStorage::set("bigram_counts", bv).is_err() {
-                                log!("error writing to storage");
-                            }
-                            //set_bigram_state.set_untracked(bv);
-                            let sv = CountsVec::from_map(symbols_counts());
-                            if LocalStorage::set("symbols_counts", sv).is_err() {
-                                log!("error writing to storage");
-                            }
-                            //set_symbols_state(sv);
-                            log!("wrote to storage");
-
-
-                            reset_lesson(RegenType::Regenerate);
-    //                        set_index(0);
-    //                        set_text(wi.with_untracked(|wi| {
-    //                            wi.generate_lesson_string_from_ngrams_with_special_chars(
-    //                                LESSON_LENGTH,
-    //                                &to_train.get_untracked(),
-    //                                &symbols_to_train.get_untracked(),
-    //                            )
-    //                        }));
-    //                        let (pos_x,u pos_y) = get_xy("current", false);
-    //                        set_x(pos_x);
-    //                        set_y(pos_y);
+                on:keyup=move |_| {
+                    if index() == text().len() {
+                        let cv = CountsVec::from_map(counts());
+                        if LocalStorage::set("counts", cv).is_err() {
+                            log!("error writing to storage");
                         }
+                        let bv = CountsVec::from_map(bigram_counts());
+                        if LocalStorage::set("bigram_counts", bv).is_err() {
+                            log!("error writing to storage");
+                        }
+                        let sv = CountsVec::from_map(symbols_counts());
+                        if LocalStorage::set("symbols_counts", sv).is_err() {
+                            log!("error writing to storage");
+                        }
+                        log!("wrote to storage");
+                        reset_lesson(RegenType::Regenerate);
                     }
+                }
 
-                    on:blur=move |_| {
-                        let dialog = dialog_ref.get().expect("dialog ref not set");
+                on:blur=move |_| {
+                    let dialog = dialog_ref.get().expect("dialog ref not set");
+                    reset_lesson(RegenType::Reset);
+                    set_is_typing(false);
+                    dialog.show();
+                    dialog.focus().unwrap();
+                }
+            />
 
-                        reset_lesson(RegenType::Reset);
-                        set_is_typing(false);
-                        dialog.show();
-                        dialog.focus().unwrap();
-                    }
-                />
+            // <CharDisplay counts_map=counts to_train = to_train/>
 
-                //<CharDisplay counts_map=counts to_train = to_train/>
+            <Drawer render_prop=|| view! { cx, <CharDisplay counts_map=counts to_train=to_train/> }>
+                <CharDisplay counts_map=bigram_counts to_train=to_train/>
+            </Drawer>
+            // <CharDisplay counts_map=symbols_counts, to_train=symbols_to_train/>
+            <CharDisplay counts_map=symbols_counts to_train=symbols_to_train/>
 
-                <Drawer
-                    render_prop = || view! {cx, <CharDisplay counts_map=counts to_train = to_train/>}
-                >
-                    <CharDisplay counts_map=bigram_counts to_train = to_train />
-                </Drawer>
-                //<CharDisplay counts_map=symbols_counts, to_train=symbols_to_train/>
-                <CharDisplay counts_map=symbols_counts to_train = symbols_to_train/>
+            <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD; text-align: center">
+                <span style="color:#414868;">
+                    {move || (text()[..index()]).replace(' ', "␣")}
+                </span>
+                <span id="current" class:red=missed>
+                    // call get_xy on mount
 
-                <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD; text-align: center">
-                    <span style="color:#414868;">
-                        {move || (text()[..index()]).replace(' ', "␣")}
-                    </span>
-                    <span id="current" class:red=missed>
-                        // call get_xy on mount
-
-                        {move || {
-                            if index() == text().len() {
-                                "".to_string()
-                            } else {
-                                (text()[index()..index() + 1]).replace(' ', "␣")
-                            }
-                        }}
-
-                    </span>
-                    <span id="to_write">
-                        {move || {
-                            let (pos_x, pos_y) = get_xy("current", true);
-                            set_x(pos_x);
-                            set_y(pos_y);
-                            if index() < text().len() {
-                                (text()[index() + 1..]).replace(' ', "␣")
-                            } else {
-                                "".to_string()
-                            }
-                        }}
-
-                    </span>
-                </div>
-                <div>
                     {move || {
-                        let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
-                        let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
-                        const MINUTE: f32 = 60.0;
-                        const LETTERS_PER_WORD: f32 = 5.0;
-
-                        format!("wpm: {}", MINUTE / avg_time / LETTERS_PER_WORD)
+                        if index() == text().len() {
+                            "".to_string()
+                        } else {
+                            (text()[index()..index() + 1]).replace(' ', "␣")
+                        }
                     }}
 
-                </div>
-                <div
-                    id="cursor"
-                    // style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
-                    style=move || {
-                        if !is_typing() {
-                            return "display: none;".to_string();
+                </span>
+                <span id="to_write">
+                    {move || {
+                        let (pos_x, pos_y) = get_xy("current", true);
+                        set_x(pos_x);
+                        set_y(pos_y);
+                        if index() < text().len() {
+                            (text()[index() + 1..]).replace(' ', "␣")
+                        } else {
+                            "".to_string()
                         }
-                        format!(
-                            "position: absolute ; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff; transition: left 0.1s ease-in-out;",
-                            y().to_string(), x().to_string()
-                        )
-                    }
-                >// figure out a way to change only the position of the cursor, probably with a class
+                    }}
 
-                </div>
-                <dialog
-                    _ref = dialog_ref
-                    open
-                    style="top: 30%"
-                    id="typeDialog"
-                    // move focus to input
-                    on:click= move |_| {
-                        handle_popup();
-                    }
-                >
-
-                    <div>"Click to start typing"</div>
-                </dialog>
+                </span>
             </div>
-        }
+            <div>
+                {move || {
+                    let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
+                    let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
+                    const MINUTE: f32 = 60.0;
+                    const LETTERS_PER_WORD: f32 = 5.0;
+                    format!("wpm: {}", MINUTE / avg_time / LETTERS_PER_WORD)
+                }}
+
+            </div>
+            <div
+                id="cursor"
+                // style = "position: absolute; top:14px; left: 7px; width: 2px; height: 2rem; background-color: black;"
+                style=move || {
+                    if !is_typing() {
+                        return "display: none;".to_string();
+                    }
+                    format!(
+                        "position: absolute ; top:{}px; left:{}px; width: 2px; height: 2rem; background-color:#7dcfff; transition: left 0.1s ease-in-out;",
+                        y().to_string(), x().to_string()
+                    )
+                }
+            >
+            // figure out a way to change only the position of the cursor, probably with a class
+
+            </div>
+            <dialog
+                _ref=dialog_ref
+                open
+                style="top: 30%"
+                id="typeDialog"
+                // move focus to input
+                on:click=move |_| {
+                    handle_popup();
+                }
+            >
+
+                <div>"Click to start typing"</div>
+            </dialog>
+        </div>
+    }
 }

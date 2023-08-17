@@ -9,8 +9,8 @@ pub fn CharDisplay(
     to_train: RwSignal<Vec<String>>,
 ) -> impl IntoView {
     view! { cx,
-        <div // horizontal
-        style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: auto; width: 100%;">
+        // horizontal
+        <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; height: auto; width: 100%;">
             <For
                 // should probably do this with with sometime
                 each=move || counts_map.get()
@@ -35,25 +35,25 @@ pub fn CharDisplay(
                                 };
                                 format!("hsl({}, 78%, 63%)", hit_rate * 120.0)
                             }
-                            style:border = move || {
-                                if clicked() {
-                                    "0.1rem solid red"
-                                } else {
-                                    "0.1rem solid black"
-                                }
+
+                            style:border=move || {
+                                if clicked() { "0.1rem solid red" } else { "0.1rem solid black" }
                             }
+
                             on:click=move |e| {
                                 e.stop_propagation();
                                 if clicked() {
                                     set_clicked(false);
-                                    to_train.update(|vec| {
-                                        vec.retain(|s| s != &symbol.to_string());
-                                    });
+                                    to_train
+                                        .update(|vec| {
+                                            vec.retain(|s| s != &symbol.to_string());
+                                        });
                                 } else {
                                     set_clicked(true);
-                                    to_train.update(|vec| {
-                                        vec.push(symbol.to_string());
-                                    });
+                                    to_train
+                                        .update(|vec| {
+                                            vec.push(symbol.to_string());
+                                        });
                                 }
                             }
                         >
