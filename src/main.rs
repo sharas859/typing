@@ -30,15 +30,19 @@ fn App(cx: Scope) -> impl IntoView {
     word_index.read_words(word_list);
     let (wi, _) = create_signal(cx, word_index);
 
+    const LESSON_LENGTH: usize = 50;
+
     //let lesson = "best dislike discrue net will aboung the occase who some and name been disgust what pass ver been antic she gree receive strust";
     //let lesson = "hello world";
     let to_train = create_rw_signal(cx, Vec::<String>::new());
     let symbols_to_train = create_rw_signal(cx, Vec::<String>::new());
     let (text, set_text) = create_signal(
         cx,
-        wi.with_untracked(|wi| wi.generate_lesson_from_n_grams(50, &to_train.get_untracked())),
+        wi.with_untracked(|wi| {
+            wi.generate_lesson_from_n_grams(LESSON_LENGTH, &to_train.get_untracked())
+        }),
     );
-    set_text(wi.with_untracked(|wi| wi.generate_random_lesson_string(50)));
+    set_text(wi.with_untracked(|wi| wi.generate_random_lesson_string(LESSON_LENGTH)));
     let (index, set_index) = create_signal(cx, 0);
     let (missed, set_missed) = create_signal(cx, false);
     let (x, set_x) = create_signal(cx, 0.0);
@@ -138,7 +142,7 @@ fn App(cx: Scope) -> impl IntoView {
         if let RegenType::Regenerate = regen {
             set_text(wi.with_untracked(|wi| {
                 wi.generate_lesson_string_from_ngrams_with_special_chars(
-                    50,
+                    LESSON_LENGTH,
                     &to_train.get_untracked(),
                     &symbols_to_train.get_untracked(),
                 )
@@ -247,7 +251,7 @@ fn App(cx: Scope) -> impl IntoView {
     //                        set_index(0);
     //                        set_text(wi.with_untracked(|wi| {
     //                            wi.generate_lesson_string_from_ngrams_with_special_chars(
-    //                                50,
+    //                                LESSON_LENGTH,
     //                                &to_train.get_untracked(),
     //                                &symbols_to_train.get_untracked(),
     //                            )
