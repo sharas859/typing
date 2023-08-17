@@ -3,9 +3,8 @@ use leptos::*;
 use gloo_storage::{LocalStorage, Storage};
 use instant::{Duration, Instant};
 //use leptos_use::storage::use_storage;
+use leptos::html::{Dialog, Input};
 use ringbuf::{Rb, StaticRb};
-use wasm_bindgen::JsCast;
-use web_sys::{HtmlDialogElement, HtmlElement};
 mod common;
 use common::structs::*;
 use common::traits::*;
@@ -45,6 +44,9 @@ fn App(cx: Scope) -> impl IntoView {
     let (rb_sig, set_rb_sig) = create_signal(cx, input_buffer);
     let (timer, set_timer) = create_signal(cx, Instant::now());
     let (is_typing, set_is_typing) = create_signal(cx, false);
+
+    let dialog_ref = create_node_ref::<Dialog>(cx);
+    let input_ref = create_node_ref::<Input>(cx);
 
     // todo make this a static struct
     let symbols: Vec<&str> = vec![
@@ -144,6 +146,21 @@ fn App(cx: Scope) -> impl IntoView {
         last_char.set_value("".to_string());
     };
 
+    let handle_popup = move || {
+        let input = input_ref.get().expect("input ref not set");
+        let dialog = dialog_ref.get().expect("dialog ref not set");
+        {
+            let (pos_x, pos_y) = get_xy("current", false);
+            set_x(pos_x);
+            set_y(pos_y);
+        }
+
+        dialog.close();
+        set_is_typing(true);
+
+        input.focus().unwrap();
+    };
+
     create_effect(cx, move |_| {
         to_train();
         symbols_to_train();
@@ -154,6 +171,7 @@ fn App(cx: Scope) -> impl IntoView {
             <div // make this the whole screen, ignoring parent padding
             style="position: absolute; top:0; left:0; height:100%; width:100%; padding:0; margin:0; display: flex; flex-direction: column;  align-items: center; background-color: #1a1b26;">
                 <input
+                    _ref = input_ref
                     id="input"
                     style="opacity:0; position:absolute; top:0; left:0; height:0; width:0;"
                     on:keydown=move |e| {
@@ -235,15 +253,12 @@ fn App(cx: Scope) -> impl IntoView {
                     }
 
                     on:blur=move |_| {
-                        let dialog = document()
-                            .get_element_by_id("typeDialog")
-                            .unwrap()
-                            .dyn_into::<HtmlDialogElement>()
-                            .unwrap();
+                        let dialog = dialog_ref.get().expect("dialog ref not set");
 
                         reset_lesson(false);
                         set_is_typing(false);
                         dialog.show();
+                        dialog.focus().unwrap();
                     }
                 />
 
@@ -314,34 +329,17 @@ fn App(cx: Scope) -> impl IntoView {
 
                 </div>
                 <dialog
+                    _ref = dialog_ref
                     open
                     style="top: 30%"
                     id="typeDialog"
                     // move focus to input
-                    on:click=move |_| {
-                        let input = document()
-                            .get_element_by_id("input")
-                            .unwrap()
-                            .dyn_into::<HtmlElement>()
-                            .unwrap();
-                        let dialog = document()
-                            .get_element_by_id("typeDialog")
-                            .unwrap()
-                            .dyn_into::<HtmlDialogElement>()
-                            .unwrap();
-                        {
-                            let (pos_x, pos_y) = get_xy("current", false);
-                            set_x(pos_x);
-                            set_y(pos_y);
-                        }
-                        dialog.close();
-                        set_is_typing(true);
-
-                        input.focus().unwrap();
+                    on:click= move |_| {
+                        handle_popup();
                     }
                 >
 
-                    <div>"click to start typing"</div>
+                    <div>"Click to start typing"</div>
                 </dialog>
             </div>
         }
