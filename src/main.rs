@@ -18,6 +18,11 @@ fn main() {
     mount_to_body(|cx| view! { cx, <App/> })
 }
 
+enum RegenType {
+    Regenerate,
+    Reset,
+}
+
 #[component]
 fn App(cx: Scope) -> impl IntoView {
     let mut word_index = word_index::WordIndex::new();
@@ -128,9 +133,9 @@ fn App(cx: Scope) -> impl IntoView {
     let (symbols_counts, set_symbols_counts) = create_signal(cx, sm);
     let last_char = store_value(cx, "".to_string());
 
-    let reset_lesson = move |generate_new_lesson: bool| {
+    let reset_lesson = move |regen: RegenType| {
         set_index(0);
-        if generate_new_lesson {
+        if let regen = RegenType::Regenerate {
             set_text(wi.with_untracked(|wi| {
                 wi.generate_lesson_string_from_ngrams_with_special_chars(
                     50,
@@ -139,6 +144,7 @@ fn App(cx: Scope) -> impl IntoView {
                 )
             }));
         }
+
         set_missed(false);
         let (pos_x, pos_y) = get_xy("current", false);
         set_x(pos_x);
@@ -164,7 +170,7 @@ fn App(cx: Scope) -> impl IntoView {
     create_effect(cx, move |_| {
         to_train();
         symbols_to_train();
-        reset_lesson(true);
+        reset_lesson(RegenType::Regenerate);
     });
 
     view! { cx,
@@ -177,7 +183,7 @@ fn App(cx: Scope) -> impl IntoView {
                     on:keydown=move |e| {
                         let key = &e.key();
                         if key == "Escape" {
-                            reset_lesson(false);
+                            reset_lesson(RegenType::Reset);
                             return;
                         }
                         if key.len() != 1 {
@@ -237,7 +243,7 @@ fn App(cx: Scope) -> impl IntoView {
                             log!("wrote to storage");
 
 
-                            reset_lesson(true);
+                            reset_lesson(RegenType::Regenerate);
     //                        set_index(0);
     //                        set_text(wi.with_untracked(|wi| {
     //                            wi.generate_lesson_string_from_ngrams_with_special_chars(
@@ -246,7 +252,7 @@ fn App(cx: Scope) -> impl IntoView {
     //                                &symbols_to_train.get_untracked(),
     //                            )
     //                        }));
-    //                        let (pos_x, pos_y) = get_xy("current", false);
+    //                        let (pos_x,u pos_y) = get_xy("current", false);
     //                        set_x(pos_x);
     //                        set_y(pos_y);
                         }
@@ -255,7 +261,7 @@ fn App(cx: Scope) -> impl IntoView {
                     on:blur=move |_| {
                         let dialog = dialog_ref.get().expect("dialog ref not set");
 
-                        reset_lesson(false);
+                        reset_lesson(RegenType::Reset);
                         set_is_typing(false);
                         dialog.show();
                         dialog.focus().unwrap();
