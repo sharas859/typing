@@ -135,7 +135,7 @@ fn App(cx: Scope) -> impl IntoView {
 
     let reset_lesson = move |regen: RegenType| {
         set_index(0);
-        if let regen = RegenType::Regenerate {
+        if let RegenType::Regenerate = regen {
             set_text(wi.with_untracked(|wi| {
                 wi.generate_lesson_string_from_ngrams_with_special_chars(
                     50,
