@@ -36,7 +36,7 @@ impl HitRate {
         match self {
             HitRate::Zero => "hsl(204, 8%, 76%);".to_string(),
             HitRate::VeryLow => "#F7768E;".to_string(),
-            HitRate::Low => "#E18C85".to_string(),
+            HitRate::Low => "#8C8587".to_string(),
             HitRate::Medium => "#E18C85".to_string(),
             HitRate::High => "#B4B873".to_string(),
             HitRate::VeryHigh => "#9ECE6A".to_string(),
