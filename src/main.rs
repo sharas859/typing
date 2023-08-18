@@ -7,6 +7,7 @@ use leptos::html::{Dialog, Input};
 use ringbuf::{Rb, StaticRb};
 mod common;
 use common::structs::*;
+use common::symbols::*;
 use common::traits::*;
 use common::utils::*;
 mod components;
@@ -58,31 +59,6 @@ fn App(cx: Scope) -> impl IntoView {
     let input_ref = create_node_ref::<Input>(cx);
 
     // todo make this a static struct
-    let symbols: Vec<&str> = vec![
-        "`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "~", "!", "@", "#", "$",
-        "%", "^", "&", "*", "(", ")", "_", "+", "[", "]", "{", "}", "\\", "|", ";", ":", "\'",
-        "\"", ",", ".", "<", ">", "/", "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
-        "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C",
-        "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
-        "V", "W", "X", "Y", "Z",
-    ];
-
-    let letters: Vec<&str> = vec![
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
-        "s", "t", "u", "v", "w", "x", "y", "z",
-    ];
-
-    let capitals: Vec<&str> = vec![
-        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",
-        "S", "T", "U", "V", "W", "X", "Y", "Z",
-    ];
-
-    let numbers: Vec<&str> = vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-
-    let symbols: Vec<&str> = vec![
-        "`", "~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+", "[", "]", "{", "}",
-        "\\", "|", ";", ":", "\'", "\"", ",", ".", "<", ">", "/", "?",
-    ];
 
     //    let bigrams = symbols
     //        .iter()
@@ -90,9 +66,9 @@ fn App(cx: Scope) -> impl IntoView {
     //        .collect::<Vec<String>>();
     //make every value in symbols a ref cell
     // combine symbols and bigrams
-    let bigrams = letters
+    let bigrams = LETTERS
         .iter()
-        .flat_map(|&c1| letters.iter().map(move |&c2| format!("{}{}", c1, c2)))
+        .flat_map(|&c1| LETTERS.iter().map(move |&c2| format!("{}{}", c1, c2)))
         .collect::<Vec<String>>();
 
     let bigram_map: CountsMap = bigrams
@@ -100,12 +76,12 @@ fn App(cx: Scope) -> impl IntoView {
         .map(|bigram| (bigram.clone(), Counts::new(cx)))
         .collect();
 
-    let symbols_map: CountsMap = symbols
+    let symbols_map: CountsMap = SPECIALS
         .iter()
         .map(|&c| (c.to_string(), Counts::new(cx)))
         .collect();
 
-    let map: CountsMap = letters
+    let map: CountsMap = LETTERS
         .iter()
         .map(|&c| (c.to_string(), Counts::new(cx)))
         .collect();
