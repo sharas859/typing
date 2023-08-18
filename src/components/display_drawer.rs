@@ -1,3 +1,4 @@
+use leptos::html::Div;
 use leptos::*;
 
 #[component]
@@ -18,21 +19,25 @@ where
         >
 
             <div
-                style:list-style="none"
                 style:text-align="center"
-                style:webkit-details-marker="none"
                 style:display="flex"
                 style:flex-direction="row"
+                style:cursor = "pointer"
                 on:click=move |_| set_is_open(!is_open())
+                class="drawer-header"
             >
                 {render_prop()}
                 {move || if is_open() { "▲" } else { "▼" }}
             </div>
 
+
+
+
+        <div >
             <Show when=is_open fallback=|cx| view! { cx, <div></div> }>
                 {children.to_owned()}
             </Show>
-
+        </div>
         </div>
     }
 }

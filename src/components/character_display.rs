@@ -1,4 +1,5 @@
 use crate::common::structs::Counts;
+use leptos::html::Div;
 use leptos::*;
 use linked_hash_map::LinkedHashMap;
 
@@ -18,9 +19,11 @@ pub fn CharDisplay(
                 view=move |cx, (symbol, counts)| {
                     let (clicked, set_clicked) = create_signal(cx, false);
                     let sym = symbol.clone();
+                    let handle = create_node_ref::<Div>(cx);
                     // let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
                     view! { cx,
                         <div
+                            _ref=handle
                             style="width:1rem; height=10px; solid black;"
                             style:background-color=move || {
                                 if counts.total.get() == 0 {
@@ -40,6 +43,8 @@ pub fn CharDisplay(
                                 if clicked() { "0.1rem solid red" } else { "0.1rem solid black" }
                             }
 
+                            style:cursor="pointer"
+
                             on:click=move |e| {
                                 e.stop_propagation();
                                 if clicked() {
@@ -56,6 +61,9 @@ pub fn CharDisplay(
                                         });
                                 }
                             }
+
+
+
                         >
 
                             {sym}
