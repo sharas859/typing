@@ -256,13 +256,15 @@ fn App(cx: Scope) -> impl IntoView {
 
                 </span>
             </div>
-            <div>
+            <div
+                style:color = "white"
+            >
                 {move || {
                     let time = rb_sig.with(|rb| rb.iter().sum::<Duration>());
                     let avg_time = time.as_secs_f32() / rb_sig.with_untracked(|rb| rb.len() as f32);
                     const MINUTE: f32 = 60.0;
                     const LETTERS_PER_WORD: f32 = 5.0;
-                    format!("wpm: {}", MINUTE / avg_time / LETTERS_PER_WORD)
+                    format!("wpm: {}", (MINUTE / avg_time / LETTERS_PER_WORD) as u32)
                 }}
 
             </div>
