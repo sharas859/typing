@@ -48,7 +48,7 @@ fn App(cx: Scope) -> impl IntoView {
     let (x, set_x) = create_signal(cx, 0.0);
     let (y, set_y) = create_signal(cx, 0.0);
 
-    const LAST_N_CHARS: usize = 40;
+    const LAST_N_CHARS: usize = LESSON_LENGTH;
     let input_buffer = StaticRb::<Duration, LAST_N_CHARS>::default();
     let (rb_sig, set_rb_sig) = create_signal(cx, input_buffer);
     let (timer, set_timer) = create_signal(cx, Instant::now());
