@@ -32,15 +32,16 @@ impl HitRate {
         }
     }
 
-    fn get_color(&self) -> String {
+    fn get_class(&self) -> String {
         match self {
-            HitRate::Zero => "hsl(204, 8%, 76%);".to_string(),
-            HitRate::VeryLow => "#F7768E;".to_string(),
-            HitRate::Low => "#8C8587".to_string(),
-            HitRate::Medium => "#E18C85".to_string(),
-            HitRate::High => "#B4B873".to_string(),
-            HitRate::VeryHigh => "#9ECE6A".to_string(),
+            HitRate::Zero => "zero",
+            HitRate::VeryLow => "veryLow",
+            HitRate::Low => "low",
+            HitRate::Medium => "medium",
+            HitRate::High => "high",
+            HitRate::VeryHigh => "veryHigh",
         }
+        .to_string()
     }
 }
 
@@ -60,31 +61,26 @@ pub fn CharDisplay(
                 view=move |cx, (symbol, counts)| {
                     let (clicked, set_clicked) = create_signal(cx, false);
                     let sym = symbol.clone();
-                    let handle = create_node_ref::<Div>(cx);
+                    let hit_rate = move || if counts.total.get() == 0 {
+                        0.0
+                    } else {
+                        1.0 - counts.missed.get() as f32 / counts.total.get() as f32
+                    };
+                    let hitrate_class = move || HitRate::from_rate(hit_rate()).get_class();
                     // let counts = create_memo(cx, move |_| counts_map.with(|map| {*map.get(&symbol).unwrap()}));
                     view! { cx,
                         <div
-                            _ref=handle
+                            class="counter"
                             style="width:1rem; height=10px; solid black;"
-                            style:background-color=move || {
-                                if counts.total.get() == 0 {
-                                    return "hsl(204, 8%, 76%);".to_string();
-                                }
-                                let total = counts.total.get() as f32;
-                                let missed = counts.missed.get() as f32;
-                                let hit_rate = if counts.total.get() == 0 {
-                                    0.0
-                                } else {
-                                    1.0 - missed / total
-                                };
-                                HitRate::from_rate(hit_rate).get_color()
-                            }
-
+                            style:transition="background-color 0.3s ease-in-out;"
+                            style:box-sizing="border-box"
+                            class=hitrate_class
                             style:border=move || {
                                 if clicked() { "0.1rem solid red" } else { "0.1rem solid black" }
                             }
 
                             style:cursor="pointer"
+
 
                             on:click=move |e| {
                                 e.stop_propagation();
