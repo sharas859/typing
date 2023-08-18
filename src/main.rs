@@ -58,14 +58,6 @@ fn App(cx: Scope) -> impl IntoView {
     let dialog_ref = create_node_ref::<Dialog>(cx);
     let input_ref = create_node_ref::<Input>(cx);
 
-    // todo make this a static struct
-
-    //    let bigrams = symbols
-    //        .iter()
-    //        .flat_map(|&c1| symbols.iter().map(move |&c2| format!("{}{}", c1, c2)))
-    //        .collect::<Vec<String>>();
-    //make every value in symbols a ref cell
-    // combine symbols and bigrams
     let bigrams = LETTERS
         .iter()
         .flat_map(|&c1| LETTERS.iter().map(move |&c2| format!("{}{}", c1, c2)))

@@ -3,6 +3,47 @@ use leptos::html::Div;
 use leptos::*;
 use linked_hash_map::LinkedHashMap;
 
+enum HitRate {
+    Zero,
+    VeryLow,
+    Low,
+    Medium,
+    High,
+    VeryHigh,
+}
+
+impl HitRate {
+    fn from_rate(rate: f32) -> Self {
+        if rate == 0.0 {
+            HitRate::Zero
+        } else if rate < 0.2 {
+            HitRate::VeryLow
+        } else if rate < 0.4 {
+            HitRate::Low
+        } else if rate < 0.6 {
+            HitRate::Medium
+        } else if rate < 0.8 {
+            HitRate::High
+        } else if rate <= 1.0 {
+            HitRate::VeryHigh
+        } else {
+            // Default case
+            HitRate::Zero
+        }
+    }
+
+    fn get_color(&self) -> String {
+        match self {
+            HitRate::Zero => "hsl(204, 8%, 76%);".to_string(),
+            HitRate::VeryLow => "#F7768E;".to_string(),
+            HitRate::Low => "#E18C85".to_string(),
+            HitRate::Medium => "#E18C85".to_string(),
+            HitRate::High => "#B4B873".to_string(),
+            HitRate::VeryHigh => "#9ECE6A".to_string(),
+        }
+    }
+}
+
 #[component]
 pub fn CharDisplay(
     cx: Scope,
@@ -36,7 +77,7 @@ pub fn CharDisplay(
                                 } else {
                                     1.0 - missed / total
                                 };
-                                format!("hsl({}, 78%, 63%)", hit_rate * 120.0)
+                                HitRate::from_rate(hit_rate).get_color()
                             }
 
                             style:border=move || {
