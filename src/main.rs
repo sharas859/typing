@@ -78,6 +78,11 @@ fn App(cx: Scope) -> impl IntoView {
         .map(|&c| (c.to_string(), Counts::new(cx)))
         .collect();
 
+    let nums_map = NUMBERS
+        .iter()
+        .map(|&c| (c.to_string(), Counts::new(cx)))
+        .collect::<CountsMap>();
+
     //    let (state, set_state, _) = use_storage(cx, "counts", CountsVec::from_map(map));
     //    let (bigram_state, set_bigram_state, _) =
     //        use_storage(cx, "bigram_counts", CountsVec::from_map(bigram_map));
@@ -89,7 +94,7 @@ fn App(cx: Scope) -> impl IntoView {
         LocalStorage::get("bigram_counts").unwrap_or(CountsVec::from_map(bigram_map));
     let symbols_state =
         LocalStorage::get("symbols_counts").unwrap_or(CountsVec::from_map(symbols_map));
-
+    let nums_state = LocalStorage::get("nums_counts").unwrap_or(CountsVec::from_map(nums_map));
     //let cv = LocalStorage::get("counts_vec").unwrap_or(CountsVec::from_map(map));
     //    let cm = state.get_untracked().into_map(cx);
     //    let bm = bigram_state.get_untracked().into_map(cx);
@@ -97,12 +102,14 @@ fn App(cx: Scope) -> impl IntoView {
     let cm = state.into_map(cx);
     let bm = bigram_state.into_map(cx);
     let sm = symbols_state.into_map(cx);
+    let nm = nums_state.into_map(cx);
 
     // check if map and map2 are equal
 
     let (counts, set_counts) = create_signal(cx, cm);
     let (bigram_counts, set_bigram_counts) = create_signal(cx, bm);
     let (symbols_counts, set_symbols_counts) = create_signal(cx, sm);
+    let (nums_counts, set_nums_counts) = create_signal(cx, nm);
     let last_char = store_value(cx, "".to_string());
 
     let reset_lesson = move |regen: RegenType| {
@@ -178,6 +185,8 @@ fn App(cx: Scope) -> impl IntoView {
                             .update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
                         set_symbols_counts
                             .update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
+                        set_nums_counts
+                            .update(|counts| counts.incr_counts(typed_char.to_string(), missed()));
                         if !last_char().is_empty() {
                             let bigram = format!("{}{}", last_char(), typed_char);
                             set_bigram_counts.update(|counts| counts.incr_counts(bigram, missed()));
@@ -204,6 +213,10 @@ fn App(cx: Scope) -> impl IntoView {
                         if LocalStorage::set("symbols_counts", sv).is_err() {
                             log!("error writing to storage");
                         }
+                        let nv = CountsVec::from_map(nums_counts());
+                        if LocalStorage::set("nums_counts", nv).is_err() {
+                            log!("error writing to storage");
+                        }
                         log!("wrote to storage");
                         reset_lesson(RegenType::Regenerate);
                     }
@@ -225,7 +238,7 @@ fn App(cx: Scope) -> impl IntoView {
             </Drawer>
             // <CharDisplay counts_map=symbols_counts, to_train=symbols_to_train/>
             <CharDisplay counts_map=symbols_counts to_train=symbols_to_train/>
-
+            <CharDisplay counts_map=nums_counts to_train=symbols_to_train/>
             <div style="font-size: 2rem; width:100%; height:auto; word-break: break-all; font-family: monospace; font-weight: 400; color:#959CBD; text-align: center">
                 <span style="color:#414868;">
                     {move || (text()[..index()]).replace(' ', "␣")}
